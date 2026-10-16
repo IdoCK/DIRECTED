@@ -58,7 +58,7 @@ try {
 
 // Import constants for printing parameters
 const fs = require('fs');
-const constantsPath = path.join(__dirname, 'consts.js');
+const constantsPath = path.join(__dirname, 'frontend', 'consts.js');
 const constantsContent = fs.readFileSync(constantsPath, 'utf8');
 
 // Extract constants from the file (simple parsing for server use)

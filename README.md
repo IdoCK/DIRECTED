@@ -8,7 +8,9 @@ The purpose is to connect form exploration to the constraints of making it: edit
 
 The code includes a client-side demo, G-code export, and a Node.js backend that can stream commands to a connected printer or simulate responses when a connection is unavailable. Printer defaults and homing commands are tailored to the project's clay-printing workflow; they require review for other machines.
 
-![DIRECTED editor and 3D preview](directed-main.png)
+![Current DIRECTED demo with editable layers and a 3D preview](docs/screenshots/editor.png)
+
+Current interface in Demo mode, using an example form created for this documentation.
 
 ## Capabilities
 
@@ -39,23 +41,36 @@ For a hardware-free session, disconnect printers and select **Demo** on the spla
 
 `PRINTER_PORT` overrides serial port discovery, for example `COM7` on Windows or `/dev/ttyUSB0` on Linux. Without an override, the server prefers the configured port when present, then a recognized USB serial adapter. If it cannot connect, commands use the built-in simulation path.
 
-`consts.js` supplies print and travel speeds, extrusion parameters, nozzle dimensions, and build height. The server reads several of these values from that file at startup. Runtime printer settings are available through the interface and `/api/printer-config`; those updates live in server memory.
+`frontend/consts.js` supplies print and travel speeds, extrusion parameters, nozzle dimensions, and build height. The server reads several of these values from that file at startup. Runtime printer settings are available through the interface and `/api/printer-config`; those updates live in server memory.
 
 Before connecting hardware, review coordinates, units, extrusion, build limits, and the homing sequence in `server.js`. That sequence includes `M302 S0` to allow cold extrusion. This is a project-specific choice rather than a general printer configuration.
 
 This public snapshot includes the portable Node.js application and its tests. Installation-specific Raspberry Pi networking, hotspot, service, and launcher helpers are omitted. Configure operating-system serial access and any private network separately; the application does not provision them. No Wi-Fi passphrase is distributed with this snapshot.
 
+## Repository layout
+
+```text
+frontend/          Browser application, styles, runtime assets and vendor libraries
+backend/           Server-side interpolation service
+test/              Automated checks and manual diagnostics
+docs/screenshots/  Current product screenshots
+server.js          Node.js server entry point
+config.js          Server environment settings
+```
+
+The Node server serves `frontend/` at the site root, so browser URLs and the editing workflow stay the same.
+
 ## Architecture
 
 | Area | Main files | Responsibility |
 | --- | --- | --- |
-| Browser entry and coordination | `index.html`, `init.js`, `app.js` | Interface setup and application events |
-| Editing and layers | `path-editor.js`, `layer-item.js`, `utils.js`, `interpolate.js` | Paths, layer state, interpolation |
-| Preview | `threeD-model.js`, `heatmap.js` | 3D geometry, rendering, soundness colors |
-| Printer interface | `print-integration.js`, `printer-log.js`, `printer-config.js` | Socket.IO connection, feedback, settings |
+| Browser entry and coordination | `frontend/index.html`, `frontend/init.js`, `frontend/app.js` | Interface setup and application events |
+| Editing and layers | `frontend/path-editor.js`, `frontend/layer-item.js`, `frontend/utils.js`, `frontend/interpolate.js` | Paths, layer state, interpolation |
+| Preview | `frontend/threeD-model.js`, `frontend/heatmap.js` | 3D geometry, rendering, soundness colors |
+| Printer interface | `frontend/print-integration.js`, `frontend/printer-log.js`, `frontend/printer-config.js` | Socket.IO connection, feedback, settings |
 | Server | `server.js`, `config.js` | Express routes, G-code generation, serial communication, shared print state |
 | Server interpolation | `backend/interpolation-service.js` | Batch interpolation of point arrays |
-| Vendor libraries | `lib/` | Bundled Paper.js, Three.js, OrbitControls, Clipper, and Socket.IO client |
+| Vendor libraries | `frontend/lib/` | Bundled Paper.js, Three.js, OrbitControls, Clipper, and Socket.IO client |
 
 The browser sends layer updates over Socket.IO. The server homes the printer, waits for at least five available layers, generates G-code, and processes layers sequentially. A shared server-side job tracks progress; active layers are locked in the client. HTTP endpoints provide health and serial diagnostics, printer settings, and downloadable G-code.
 
@@ -77,7 +92,7 @@ CI currently runs `npm ci` and `npm test`. Automated checks do not establish phy
 
 `package.json` provides `build:exe`, `build:linux`, `build:linux-arm`, `build:mac`, and `build:mac-arm` scripts for standalone packages using `@yao-pkg/pkg`. These scripts use `npx`, which may download the packaging tool. Packaged serial drivers are extracted beside the executable on first run, so that location needs to be writable. Each target requires separate validation.
 
-Static hosting can serve the demo, but does not run the Express server or provide USB printer access. The original installation-specific Azure publication workflow is omitted; the test CI workflow is retained.
+Static hosting should publish `frontend/` as its document root. It can serve the demo, but does not run the Express server or provide USB printer access. The original installation-specific Azure publication workflow is omitted; the test CI workflow is retained.
 
 ## Security and current limitations
 

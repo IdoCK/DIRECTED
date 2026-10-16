@@ -22,17 +22,9 @@
   },
   "pkg": {
     "assets": [
-      "index.html",
-      "styles.css",
-      "splash-screen.css",
-      "*.js",
-      "lib/**/*",
+      "frontend/**/*",
+      "config.js",
       "backend/**/*.js",
-      "Logo small.svg",
-      "Logo+Title.svg",
-      "LogoIcon.png",
-      "favicon.ico",
-      "manifest.json",
       "node_modules/@serialport/bindings-cpp/prebuilds/**/*.node"
     ]
   },
