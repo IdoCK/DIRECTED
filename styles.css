@@ -1,0 +1,4794 @@
+:root {
+  /* Brand primaries */
+  --terracotta:        #cf4928;
+  --terracotta-hover:  #e0623f;
+  --terracotta-active: #a8381e;
+  --terracotta-dark:   #882d17;
+  --terracotta-mid:    #a64328;
+
+  /* Editor surfaces (P7) */
+  --surface-editor:    #f7f3f0;
+  --surface-canvas:    #faf8f6;
+
+  /* Semantic / functional (D-05) */
+  --success:           #3d8c5a;
+  --danger:            #c0392b;
+  --neutral:           #6b6460;
+
+  /* Typography */
+  --text-primary:      #263238;
+
+  /* Motion tokens (Phase 3 — P11) */
+  --ease-out:          cubic-bezier(.22,1,.36,1);
+  --ease-in-out:       cubic-bezier(0.4, 0, 0.2, 1); /* symmetric, no overshoot */
+  --duration-fast:     150ms;
+  --duration-base:     250ms;
+  --duration-slow:     400ms;
+
+  /* Semantic / functional — warning (P8) */
+  --warning:           #c87833;
+
+  /* Surface / corner treatment — precision tool = sharp corners */
+  --modal-radius:      0px;
+
+  /* Fluid chrome sizing — dynamic layout (replaces fixed % heights) */
+  --topbar-h:          clamp(52px, 7vh, 72px);
+  --actionbar-h:       clamp(56px, 8vh, 88px);
+  --log-h:             clamp(120px, 16vh, 240px);
+  --panel-min:         clamp(280px, 32vw, 460px);
+
+  /* Keyboard focus ring */
+  --focus-ring:        2px solid var(--terracotta);
+
+  /* ===== Focus-mode (Layout 6) — light Slipware overlay language =====
+     Consumes the splash tokens (--paper/--ink/--hairline/--carve-* from
+     splash-screen.css, defined globally at :root). Overlays read as raised
+     sheets of Slipware paper. Sharp 3px corners — NOT floating dark glass. */
+  --fm-radius:         3px;
+  --fm-glass:          rgba(248, 241, 232, 0.78);  /* translucent --paper */
+  --fm-glass-strong:   rgba(248, 241, 232, 0.92);
+  --fm-blur:           blur(14px) saturate(115%);
+  --fm-hairline:       #E7DDD0;
+  /* raised sheet of paper: contact shadow + lit top lip + faint recessed base */
+  --fm-raise:          0 1px 2px rgba(122, 40, 18, 0.16),
+                       0 10px 28px rgba(122, 40, 18, 0.12),
+                       inset 0 1px 0 rgba(255, 255, 255, 0.9),
+                       inset 0 -1px 2px rgba(122, 40, 18, 0.06);
+}
+
+/* Force font across entire app */
+* {
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif !important;
+}
+
+/* Visually-hidden but available to screen readers (e.g. the log's aria-live mirror). */
+.sr-only {
+    position: absolute !important;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Keyboard focus ring — shown only for keyboard navigation, never on mouse/touch.
+   !important overrides the scattered `outline: none` rules on individual controls. */
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.control-button:focus-visible,
+.menu-item:focus-visible,
+.hamburger-menu:focus-visible,
+.color-scheme-btn:focus-visible,
+.user-preferences-btn:focus-visible,
+.export-gcode-dropdown-btn:focus-visible,
+.studio-mode-btn:focus-visible,
+.completion-button:focus-visible,
+.setting-button:focus-visible,
+#ActionBar button:focus-visible,
+#LayerSlider:focus-visible,
+#planeToggleButton:focus-visible {
+    outline: var(--focus-ring) !important;
+    outline-offset: 2px !important;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    color: #263238;
+    overscroll-behavior: none;
+}
+
+#viewport {
+    display: flex;
+    flex-direction: column; /* Stack children vertically */
+    width: 100%;
+    height: 100vh; /* fallback */
+    height: 100dvh; /* dynamic viewport height — avoids mobile URL-bar overflow */
+    position: relative; /* Ensure child elements can be positioned absolutely */
+    background-color: var(--surface-editor);
+    overflow: hidden;
+}
+
+#mainContent {
+    display: flex;
+    flex: 1; /* Take remaining space after topBar */
+    width: 100%;
+    min-height: 0; /* critical: lets canvas children shrink instead of overflowing */
+    position: relative; /* Make this a positioning context for absolute children */
+    container-type: inline-size; /* enable container queries on descendants (e.g. ActionBar) */
+}
+
+#leftContainer {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0; /* fluid split with #rightContainer */
+    min-width: 0; /* allow shrink below content size */
+    min-height: 0;
+    align-items: center; /* Center buttons vertically */
+    container-type: inline-size; /* lets #ActionBar reflow on its own width */
+}
+
+#leftContainer canvas {
+    flex: 1; /* Each canvas takes up half the height of the left container */
+}
+
+#rightContainer {
+    display: flex;
+    flex: 1 1 0; /* Take up the remaining space on the right */
+    min-width: 0; /* allow shrink below content size */
+    min-height: 0;
+    align-items: center; /* Center buttons vertically */
+}
+
+#topBar {
+    display: flex;
+    justify-content: space-between; /* Space between sections */
+    align-items: center; /* Center items vertically */
+    flex: 0 0 auto;
+    min-height: var(--topbar-h); /* fluid pixel floor — never crushes controls */
+    flex-wrap: wrap; /* graceful overflow on narrow widths instead of clipping */
+    width: 100%;
+    padding: 0 20px;
+    box-sizing: border-box;
+    position: relative;
+    border-bottom: solid 1px #737373;
+}
+
+#topBarCenter {
+    display: flex;
+    gap: 20px; /* Space between stop and pause buttons */
+    align-items: center;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%); /* Center horizontally */
+    transition: transform 0.3s ease; /* Smooth movement when adjusting position */
+}
+
+#topBarSettings {
+    display: flex;
+    gap: 15px; /* Space between setting buttons */
+    align-items: center;
+    margin-left: auto;
+    margin-right: 110px; /* 15px + 50px + 20px + 15px + 10px = 110px total margin */
+}
+
+#topBarRight {
+    display: flex;
+    align-items: center;
+}
+
+.control-button {
+    width: 50px;
+    height: 50px;
+    border: none;
+    border-radius: 20%;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color var(--duration-base) var(--ease-out),
+                color var(--duration-base) var(--ease-out),
+                border-color var(--duration-base) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+}
+
+.play-button {
+    background-color: var(--success);
+    color: white;
+    border: solid 2px rgba(0, 0, 0, 0.2);
+}
+
+.play-button:hover {
+    background-color: #44a06d;
+}
+
+.play-button:active {
+    background-color: #2f7a48;
+    transform: scale(0.95);
+}
+
+.play-button:disabled,
+.play-button.disabled {
+    background-color: #b7c7bd;
+    cursor: not-allowed;
+}
+
+.stop-button {
+    background-color: #ff4444;
+    color: white;
+    border: solid 2px rgba(0, 0, 0, 0.2);
+}
+
+.stop-button:active {
+    background-color: #d21414;
+    transform: scale(0.95);
+}
+
+.pause-button {
+    background-color: #0000006e;
+    color: white;
+    border: solid 2px rgb(0, 0, 0, 0.2);
+
+}
+
+.pause-button:active {
+    background-color: #444444;
+    transform: scale(0.95);
+}
+
+.hamburger-menu {
+    width: 30px;
+    height: 20px;
+    right: 14px; /* Adjusted to fit the design */
+    background: none;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    padding: 0;
+    margin-left: auto; /* Push to the right */
+    position: relative;
+    z-index: 10005; /* Above the dropdown menu */
+    transition: background-color var(--duration-base) var(--ease-out),
+                color var(--duration-base) var(--ease-out),
+                border-color var(--duration-base) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
+}
+
+/* Tab background for the hamburger menu */
+.hamburger-menu::before {
+    content: '';
+    position: absolute;
+    top: -100vh; /* Extend all the way to the top of the viewport */
+    left: -25px;
+    right: -20px;
+    bottom: -20px;
+    border-radius: 0 0 8px 8px; /* Rounded bottom corners, square top for tab effect */
+    z-index: -1;
+    transition: background-color var(--duration-base) var(--ease-out),
+                color var(--duration-base) var(--ease-out),
+                border-color var(--duration-base) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
+    border-top: 2px solid #1a1a1a; /* Top border to suggest connection from above */
+}
+
+/* Enhanced tab effect when menu is open */
+.hamburger-menu.open::before {
+    border-top: none; /* Remove border when connected to dropdown */
+}
+
+.hamburger-menu span {
+    display: block;
+    width: 100%;
+    height: 10px;
+    background-color: black;
+    border-radius: 5px;
+    transition: background-color var(--duration-base) var(--ease-out),
+                color var(--duration-base) var(--ease-out),
+                border-color var(--duration-base) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
+    transform-origin: center;
+}
+
+.hamburger-menu.open span:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+}
+
+.hamburger-menu.open span:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger-menu.open span:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: auto;            /* content-sized command surface, not a fixed 35% curtain */
+    max-height: 42vh;
+    background: rgba(28, 18, 14, 0.86);  /* warm near-black — on-brand vs flat grey */
+    border-bottom: 1px solid rgba(244, 236, 226, 0.10);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+    border-radius: 0;        /* edge-docked surface */
+    z-index: 10003;
+    /* GPU-composited slide (transform) instead of animating `top` (layout) */
+    transform: translateY(-100%);
+    transition: transform var(--duration-base) var(--ease-out);
+    display: flex;
+    flex-direction: column;
+    -webkit-backdrop-filter: blur(16px) saturate(120%);
+    backdrop-filter: blur(16px) saturate(120%);
+}
+
+.dropdown-menu.open {
+    transform: translateY(0); /* Slide down to visible position */
+}
+
+.dropdown-menu-content {
+    padding: 24px 40px;
+    display: flex;
+    justify-content: center;
+    align-items: stretch;   /* groups share equal height, content-sized */
+    gap: 24px;
+    overflow-y: auto;       /* scroll if it ever exceeds max-height */
+    flex-wrap: wrap;
+}
+
+.slider-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.389);
+    border-radius: 12px;
+    padding: 10%;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    height: 80%;
+    width: 50%;
+    position: relative;
+}
+
+.slider-label {
+    color: #000000be;
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-weight: 600;
+    height: 40px; /* Fixed height for consistent spacing */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vertical-slider {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 8px;
+    height: 65%;
+    background: rgba(58, 58, 58, 0.464);
+    border-radius: 4px;
+    outline: none;
+    writing-mode: bt-lr; /* IE */
+    -webkit-writing-mode: vertical-lr; /* WebKit */
+    writing-mode: vertical-lr;
+    direction: rtl; /* Make it go from bottom to top */
+    position: absolute;
+    top: 70px; /* Fixed position from top, regardless of label height */
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.dropdown-container {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;                /* even spacing between buttons — no more overlap */
+    background: rgba(244, 236, 226, 0.05);
+    border: 1px solid rgba(244, 236, 226, 0.10);
+    border-radius: 4px;
+    padding: 16px;
+    width: 240px;
+    box-sizing: border-box;
+}
+
+.color-scheme-buttons {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+}
+
+.dropdown-label {
+    color: var(--off-white, #f4ece2);
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 4px;
+    text-align: left;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.color-scheme-btn {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid rgba(244, 236, 226, 0.18);
+    border-radius: 2px;
+    background: rgba(244, 236, 226, 0.06);
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-out),
+                color var(--duration-fast) var(--ease-out),
+                border-color var(--duration-fast) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-fast) var(--ease-out),
+                opacity var(--duration-fast) var(--ease-out);
+    outline: none;
+    color: var(--off-white, #f4ece2);
+    min-height: 40px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.color-scheme-btn:hover {
+    background: rgba(207, 73, 40, 0.16);
+    border-color: rgba(207, 73, 40, 0.5);
+}
+
+.color-scheme-btn:not(.selected) {
+    opacity: 0.55;
+}
+
+.color-scheme-btn.selected {
+    background: var(--terracotta);
+    border-color: var(--terracotta-active);
+    color: #fff;
+}
+
+/* Unified dropdown action button styles */
+.studio-mode-btn,
+.export-gcode-dropdown-btn,
+.printer-config-btn,
+.user-preferences-btn {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 14px;
+    border: 1px solid rgba(244, 236, 226, 0.12);
+    border-radius: 2px;
+    background: var(--terracotta);
+    color: #ffffff;
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-base) var(--ease-out),
+                color var(--duration-base) var(--ease-out),
+                border-color var(--duration-base) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
+    outline: none;
+    margin: 0;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.studio-mode-btn:hover,
+.export-gcode-dropdown-btn:hover,
+.printer-config-btn:hover,
+.user-preferences-btn:hover {
+    background: var(--terracotta-hover);
+    transform: translateY(-1px);
+}
+
+.studio-mode-btn:active,
+.export-gcode-dropdown-btn:active,
+.printer-config-btn:active,
+.user-preferences-btn:active {
+    background: var(--terracotta-active);
+    transform: translateY(0);
+}
+
+/* Splash Screen Config Button */
+.splash-config-btn {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    width: 160px;
+    height: 50px;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: var(--terracotta-mid);
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    cursor: pointer;
+    transition: background-color var(--duration-base) var(--ease-out),
+                color var(--duration-base) var(--ease-out),
+                border-color var(--duration-base) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    text-align: center;
+}
+
+.splash-config-btn:hover {
+    background: var(--terracotta-hover);
+    transform: translateY(-1px);
+}
+
+.splash-config-btn:active {
+    background: var(--terracotta-active);
+    transform: translateY(0);
+}
+
+/* Inactivity Overlay */
+.inactivity-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(128, 128, 128, 0.8);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 20000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transition: opacity var(--duration-slow) var(--ease-out),
+                visibility 0s var(--duration-slow);
+}
+
+.inactivity-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+    transition: opacity var(--duration-slow) var(--ease-out),
+                visibility 0s;
+}
+
+.inactivity-content {
+    text-align: center;
+    color: white;
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.inactivity-content h2 {
+    font-size: min(8vw, 6vh) !important;
+    font-weight: 300 !important;
+    margin: 0 !important;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    line-height: 1.2 !important;
+    max-width: 90vw;
+    word-wrap: break-word;
+    color: white !important;
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif !important;
+}
+
+/* Inactivity Start New Session Button - Match Completion Modal */
+.inactivity-new-session-btn {
+    width: 50%;
+    height: 50px;
+    padding: 0;
+    border: 1px solid white;
+    border-radius: 8px;
+    background: var(--terracotta-dark);
+    color: #ffffff;
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-base) var(--ease-out),
+                color var(--duration-base) var(--ease-out),
+                border-color var(--duration-base) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
+    outline: none;
+    margin-top: 30px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.inactivity-new-session-btn:hover:not(:disabled) {
+    background: var(--terracotta-hover);
+    transform: translateY(-1px);
+}
+
+.inactivity-new-session-btn:active:not(:disabled) {
+    background: var(--terracotta-active);
+    transform: translateY(0);
+}
+
+.vertical-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #ffffff;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: background-color var(--duration-fast) var(--ease-out),
+                color var(--duration-fast) var(--ease-out),
+                border-color var(--duration-fast) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-fast) var(--ease-out),
+                opacity var(--duration-fast) var(--ease-out);
+}
+.vertical-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #ffffff;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Slider container with padding to prevent thumb from reaching edges */
+.slider-container {
+    position: relative;
+}
+
+/* Enhanced slider styling with edge constraints */
+#layerSlider {
+    width: 100%;
+    height: 8px;
+    border-radius: 5px;
+    background: #ddd;
+    outline: none;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+/* Webkit thumb styling with constraints */
+#layerSlider::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #04AA6D;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transform: translateX(0); /* Ensure proper positioning */
+}
+
+/* Firefox thumb styling */
+#layerSlider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #04AA6D;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transform: translateX(0);
+}
+
+/* Track styling for webkit */
+#layerSlider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 8px;
+    cursor: pointer;
+    background: #ddd;
+    border-radius: 5px;
+}
+
+/* Track styling for Firefox */
+#layerSlider::-moz-range-track {
+    width: 100%;
+    height: 8px;
+    cursor: pointer;
+    background: #ddd;
+    border-radius: 5px;
+}
+
+.menu-item {
+    background: rgba(255, 255, 255, 0.06);
+    border: none;
+    border-radius: 2px;
+    padding: 15px 20px;
+    color: var(--off-white, #f4ece2);
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    font-size: 20px;
+    cursor: pointer;
+    transition: background-color var(--duration-base) var(--ease-out),
+                color var(--duration-base) var(--ease-out),
+                border-color var(--duration-base) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+}
+
+.menu-item:hover {
+    background: rgba(207, 73, 40, 0.16); /* terracotta wash */
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.menu-item:active {
+    background: rgba(207, 73, 40, 0.26);
+    transform: translateY(0);
+}
+
+/* ============ ACTION BAR — segmented curve-editing toolbar ============ */
+:root {
+    --ab-btn: 44px;          /* hit target — exceeds 40px floor */
+    --ab-icon: 22px;
+    --ab-radius: 4px;        /* sharp/precise — it's a tool */
+    --ab-hairline: #e3d8cc;
+}
+
+/* VERTICAL tool rail, docked on the left of the 2D editor */
+#ActionBar {
+    flex: 0 0 auto;          /* content-sized chrome */
+    align-self: center;      /* vertically centered rail */
+    min-width: 56px;
+    margin: 0 8px;
+    display: flex;
+    flex-direction: column;  /* stack tools vertically */
+    align-items: center;
+    gap: 6px;
+    padding: 6px;
+    background-color: var(--off-white, #f4ece2);  /* OPAQUE instrument panel, not a tint */
+    border: 1px solid var(--ab-hairline);
+    border-radius: var(--ab-radius);
+    box-shadow: 0 1px 2px rgba(38, 50, 56, 0.06),
+                0 2px 8px rgba(136, 45, 23, 0.08);
+    max-height: 100%;
+    overflow-y: auto;   /* scroll tools if the rail is taller than the editor row */
+}
+
+/* a segment = a visual group of related buttons (stacked) */
+.action-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+/* hairline divider between segments — horizontal for the vertical rail */
+.action-separator {
+    width: 24px;
+    height: 1px;
+    margin-block: 4px;
+    margin-inline: 0;
+    background-color: var(--ab-hairline);
+    border-radius: 0;
+}
+
+#ActionBar button {
+    position: relative;
+    width: var(--ab-btn);
+    height: var(--ab-btn);
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    border-radius: var(--ab-radius);
+    background-color: transparent;
+    color: var(--text-primary, #263238);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-out),
+                color var(--duration-fast) var(--ease-out),
+                border-color var(--duration-fast) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out);
+}
+#ActionBar button svg {
+    width: var(--ab-icon);
+    height: var(--ab-icon);
+    pointer-events: none;
+}
+
+#ActionBar button:hover {
+    background-color: rgba(207, 73, 40, 0.10);
+    color: var(--terracotta-dark, #882d17);
+}
+
+#ActionBar button:active {
+    background-color: rgba(207, 73, 40, 0.18);
+    transform: translateY(1px);
+}
+
+/* ACTIVE modal tool (Move / Rotate / Scale) — solid terracotta.
+   Supports both the legacy `.active` class and `aria-pressed`. */
+#ActionBar button.active,
+#ActionBar button[aria-pressed="true"] {
+    background-color: var(--terracotta, #cf4928);
+    border-color: var(--terracotta-dark, #882d17);
+    color: var(--off-white, #f4ece2);
+}
+#ActionBar button.active:hover,
+#ActionBar button[aria-pressed="true"]:hover {
+    background-color: var(--terracotta-hover, #e0623f);
+    color: var(--off-white, #f4ece2);
+}
+
+#ActionBar button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* tooltip (label + shortcut) from data-tip */
+/* Tooltip appears to the RIGHT of the button (vertical left rail) */
+#ActionBar button[data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    left: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%) translateX(-4px);
+    padding: 5px 8px;
+    white-space: nowrap;
+    font: 500 12px/1 "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--off-white, #f4ece2);
+    background-color: var(--text-primary, #263238);
+    border-radius: var(--ab-radius);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-fast) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out);
+    transition-delay: 0ms;
+    z-index: 20;
+}
+#ActionBar button[data-tip]:hover::after { transition-delay: 300ms; opacity: 1; transform: translateY(-50%) translateX(0); }
+#ActionBar button[data-tip]:focus-visible::after { transition-delay: 0ms; opacity: 1; transform: translateY(-50%) translateX(0); }
+
+@media (prefers-reduced-motion: reduce) {
+    #ActionBar button,
+    #ActionBar button[data-tip]::after { transition: none; }
+}
+
+/* When the editor panel gets narrow, let the Action Bar scroll horizontally. */
+@container (max-width: 420px) {
+    #ActionBar {
+        overflow-x: auto;
+        justify-content: flex-start;
+        scroll-snap-type: x proximity;
+    }
+    .action-separator {
+        display: none;
+    }
+}
+
+#PrinterLog {
+    margin-top: 1.5%;
+    width: 90%;
+    /* The editor canvas is the priority workspace: the log takes its preferred
+       --log-h but YIELDS (shrinks) when vertical space is tight, instead of
+       starving the canvas. height drives the flex-basis so .printer-log-hidden
+       (which sets height:31px) can still collapse it. */
+    flex: 0 1 auto;
+    height: var(--log-h);
+    min-height: 40px;
+    background-color: #f9f9f9; /* Light background color */
+    border: 1px solid #ccc; /* Border for visual separation */
+    border-radius: 5px; /* Rounded corners */
+    overflow: hidden; /* Hide any overflow */
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px; /* Font size for messages */
+    color: #333; /* Text color */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    box-sizing: border-box; /* Include padding/border in height calculation */
+    position: relative; /* Ensure contained positioning */
+    contain: layout style; /* (dropped `size` so flex-basis can drive height) */
+    transition: flex-basis var(--duration-base) var(--ease-out); /* smooth hide/show */
+}
+
+/* Ensure PrinterLog content doesn't break out */
+#PrinterLog * {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+}
+
+/* Printer log content wrapper - the scrollable area */
+.printer-log-content {
+    height: calc(100% - 45px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px 0 5px 0;
+    scrollbar-width: none; /* Hide scrollbar for Firefox by default */
+    -ms-overflow-style: none; /* Hide scrollbar for IE and Edge by default */
+}
+
+/* Hide scrollbar for WebKit browsers by default */
+.printer-log-content::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+}
+
+/* Printer log messages container */
+.printer-messages-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    width: 100%;
+    min-height: 100%;
+    box-sizing: border-box;
+}
+
+/* Individual printer log messages */
+.printer-message {
+    margin: 4px 0;
+    line-height: 1.4;
+    width: 100%;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    padding: 0 10px;
+    min-height: 20px;
+}
+
+/* Current message highlight encasement */
+.current-message-highlight {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    border: 1px solid black;
+    border-radius: 0 0 5px 5px;
+    display: flex;
+    padding: 0 10px;
+    align-items: center;
+    color: black;
+    font-weight: bold;
+    background-color: #f9f9f9;
+    z-index: 10;
+    box-sizing: border-box;
+    transition: background-color var(--duration-base) var(--ease-out),
+                color var(--duration-base) var(--ease-out),
+                border-color var(--duration-base) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
+}
+
+/* When printer log is hidden, move current message to top with consistent styling */
+#leftContainer.printer-log-hidden .current-message-highlight {
+    top: 0;
+    bottom: auto;
+    border-radius: 5px; /* All corners have same radius */
+    border: 1px solid black; /* Consistent border stroke all around */
+    height: 29px; /* Ensure it fits within the 31px container with borders */
+}
+
+/* Phase 3 — log severity border + icon (P8 D-06) */
+.log-severity {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-left: 8px;
+    border-left: 3px solid transparent;
+    line-height: 1.4;
+}
+
+.log-severity-error   { border-color: var(--danger); }
+.log-severity-warning { border-color: var(--warning); }
+.log-severity-success { border-color: var(--success); }
+
+.log-icon {
+    font-size: 0.85em;
+    flex-shrink: 0;
+}
+
+/* D-07: single-fire pulse on error/warning arrival */
+@keyframes pulseOnce {
+    0%   { transform: scale(1);     opacity: 1;    }
+    40%  { transform: scale(1.015); opacity: 0.85; }
+    100% { transform: scale(1);     opacity: 1;    }
+}
+
+.log-severity.pulse {
+    animation: pulseOnce var(--duration-slow) var(--ease-out) forwards;
+}
+
+/* Row holding the vertical tool rail + the canvas, below the log.
+   Fills all space between the log and the bottom so the canvas is as large as possible. */
+#editorRow {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    width: 100%;
+    min-height: 0;
+    min-width: 0;
+}
+
+#PathEditorBox {
+    flex: 1 1 0; /* fill the row beside the tool rail — canvas as large as possible */
+    display: flex; /* Enable flexbox layout */
+    justify-content: center; /* Center the canvas horizontally */
+    align-items: center; /* Center the canvas vertically */
+    height: 100%;
+    position: relative; /* Ensure the overlay is positioned correctly */
+    min-height: 120px; /* never collapse to an unusable sliver */
+    min-width: 0; /* Allow flex shrinking horizontally */
+    box-sizing: border-box; /* Include padding/borders in size calculation */
+    /* size is driven by flex + ResizeObserver; no layout transition (avoids resize-loop churn) */
+}
+
+#PathEditorView {
+    width: 100%; /* Full width of container */
+    height: 100%; /* Full height of container */
+    pointer-events: auto; /* Ensure the canvas can receive events */
+    box-sizing: border-box; /* Include padding/borders in size calculation */
+}
+
+#CommandBar {
+    height: 100px; /* Fixed height for the ActionBar */
+    width: 100%;
+    display: flex;
+    justify-content: space-around; /* Space buttons evenly */
+    align-items: center; /* Center buttons vertically */
+}
+
+#SimulationBox {
+    width: 85%;
+    height: 100%;
+    display: flex; /* Enable flexbox layout */
+    position: relative; /* Make this a positioning context for absolute children */
+}
+
+#SimulationView {
+    width: 100%;
+    height: 100%;
+    border-left: 1px solid #737373; /* Light border for separation */
+    border-right: 1px solid #737373; /* Light border for separation */
+    position: relative; /* Ensure buttons are positioned relative to SimulationView */
+}
+
+#SimulationPerspectiveCube {
+    position: absolute; /* Position it relative to #SimulationBox */
+    /* Seated low so the cube reads at the same height as the view-controls dock
+       (bottom:16px) — the canvas has internal margin, so 8px lands the visible
+       cube on the dock's baseline. */
+    bottom: 8px;
+    width: 110px; /* Adjust size as needed */
+    height: 110px; /* Adjust size as needed */
+    left: 12px;
+}
+
+#SimulationPerspectiveCube canvas {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+    touch-action: none !important;
+    cursor: pointer;
+}
+
+/* ============ CUSTOM LAYER SLIDER COMPONENT (layer-slider.js) ============ */
+/* Single coordinate system: track + %-based fill/ticks/thumb. */
+.ls {
+    position: relative;
+    outline: none;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.ls-track {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(38, 50, 56, 0.06), rgba(38, 50, 56, 0.10));
+    border: 1px solid rgba(38, 50, 56, 0.22);
+    border-radius: 2px;                       /* sharp = precision instrument */
+    box-shadow: inset 0 1px 2px rgba(38, 50, 56, 0.14);
+    overflow: hidden;
+    cursor: pointer;
+}
+.ls:focus-visible .ls-track {
+    box-shadow: inset 0 1px 2px rgba(38, 50, 56, 0.16), 0 0 0 2px rgba(207, 73, 40, 0.45);
+}
+
+/* print-progress fill — rises from the bottom, printer-driven.
+   Printed = disabled: a cool desaturated grey (matches the greyed-out 3D beads),
+   NOT an alert red — far from the clay schemes and the amber/red heatmap ramp. */
+.ls-fill {
+    position: absolute;
+    left: 0; right: 0; bottom: 0; height: 0%;
+    background: linear-gradient(180deg, #B7BEC5 0%, #99A1A9 100%);
+    box-shadow: inset 0 0 0 1px rgba(90, 98, 106, 0.45);
+    transition: height var(--duration-base) var(--ease-out);
+}
+
+/* authored-layer ticks (SVG scales with the track via preserveAspectRatio:none) */
+.ls-ticks { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.ls-ticks rect { fill: rgba(38, 50, 56, 0.62); }
+
+/* hover playhead hairline */
+.ls-hoverline {
+    position: absolute; left: -3px; right: -3px; height: 1px;
+    background: var(--terracotta); opacity: 0; pointer-events: none;
+    transition: opacity var(--duration-fast) linear;
+}
+.ls:hover .ls-hoverline { opacity: 0.5; }
+
+/* thumb: off-white machined cap + terracotta datum hairline */
+.ls-thumb {
+    position: absolute; left: 50%; bottom: 0;
+    width: 150%; height: 14px;
+    transform: translate(-50%, 50%);          /* centre on the value line */
+    background:
+        linear-gradient(var(--terracotta-active), var(--terracotta-active)) center / 100% 1px no-repeat,
+        #f4ece2;
+    border: 1px solid var(--terracotta-active);
+    border-radius: 2px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.30), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+    cursor: grab;
+    pointer-events: none;                     /* the track handles all pointer input */
+    transition: transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out);
+}
+.ls.dragging .ls-thumb {
+    transform: translate(-50%, 50%) scaleX(1.04);
+    box-shadow: 0 0 0 4px rgba(207, 73, 40, 0.18), 0 1px 3px rgba(0, 0, 0, 0.30);
+}
+
+/* on-thumb layer readout (shown on hover/drag/focus) */
+.ls-readout {
+    position: absolute; right: calc(100% + 8px); top: 50%; transform: translateY(-50%);
+    font: 600 11px/1 ui-monospace, "SF Mono", monospace;
+    color: var(--text-primary); background: var(--surface-editor);
+    padding: 3px 6px; border: 1px solid rgba(38, 50, 56, 0.18); border-radius: 2px;
+    white-space: nowrap; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    opacity: 0; pointer-events: none; transition: opacity var(--duration-fast) linear;
+}
+.ls:hover .ls-readout, .ls.dragging .ls-readout, .ls:focus-visible .ls-readout { opacity: 1; }
+
+/* plane hidden → fade the thumb (the 3D layer indicator is off) */
+.ls.plane-hidden .ls-thumb { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+    .ls-fill, .ls-thumb, .ls-hoverline, .ls-readout { transition: none; }
+}
+
+#leftTopContainer {
+    display: flex;
+    width: 100%;
+    height: 50%; /* Ensure it fills the available space */
+    flex-direction: row;
+}
+
+#planeToggleButton {
+    position: absolute;
+    top: 20px;
+    right: 0px;
+    width: 110px;
+    height: 30px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    transition: background-color var(--duration-base) var(--ease-out),
+                color var(--duration-base) var(--ease-out),
+                border-color var(--duration-base) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
+    z-index: 10;
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    color: #333;
+    padding: 0;
+    gap: 10px;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    touch-action: none;
+}
+
+#planeToggleButton:hover,
+#planeToggleButton:active,
+#planeToggleButton:focus:not(:focus-visible) {
+    background: transparent !important;
+    outline: none !important;
+}
+
+#planeToggleButton .plane-icon {
+    width: 25px;
+    height: 20px;
+    position: relative;
+    transition: background-color var(--duration-base) var(--ease-out),
+                color var(--duration-base) var(--ease-out),
+                border-color var(--duration-base) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
+    flex-shrink: 0;
+}
+
+/* Plane surface - outline only when inactive */
+#planeToggleButton .plane-icon::before {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 12px;
+    border: 2px solid #4e4e4eb6;
+    background: transparent;
+    transform: perspective(20px) rotateX(45deg);
+    top: 4px;
+    left: 3px;
+    border-radius: 1px;
+    transition: background-color var(--duration-base) var(--ease-out),
+                color var(--duration-base) var(--ease-out),
+                border-color var(--duration-base) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
+}
+
+/* Plane surface - filled when active */
+#planeToggleButton.active .plane-icon::before {
+    background: rgba(184, 184, 184, 0.581);
+}
+
+#planeToggleButton .toggle-rail {
+    width: 50px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #333;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 2px;
+    position: relative;
+    transition: background-color var(--duration-base) var(--ease-out),
+                color var(--duration-base) var(--ease-out),
+                border-color var(--duration-base) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
+}
+
+#planeToggleButton.active .toggle-rail {
+    /* keep knob left-anchored; the knob glides via transform instead of a layout flip */
+    background: var(--terracotta);
+    border-color: var(--terracotta-active);
+}
+
+#planeToggleButton .toggle-rail::after {
+    content: '';
+    width: 22px;
+    height: 22px;
+    background: #333;
+    border-radius: 50%;
+    /* Absolutely positioned so the knob pins flush to each edge regardless of box-sizing. */
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    transition: left var(--duration-base) var(--ease-out),
+                transform var(--duration-base) var(--ease-out),
+                background-color var(--duration-base) var(--ease-out);
+}
+
+#planeToggleButton.active .toggle-rail::after {
+    background: #fff;
+    left: 100%;
+    transform: translate(-100%, -50%); /* knob's right edge flush to the rail's right edge */
+}
+
+/* Standby Screen Styles */
+.standby-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--terracotta-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 0.8s ease, visibility 0.8s ease, transform 0.8s ease;
+    transition-delay: 0.3s;
+}
+
+.standby-screen.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: scale(0.98);
+}
+
+.standby-content {
+    text-align: center;
+    color: white;
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+}
+
+.logo-container {
+    margin-bottom: 100px;
+    position: relative;
+}
+
+.logo-text {
+    font-size: 70px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5); /* Drop shadow */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    z-index: 10;
+    white-space: nowrap;
+    margin-bottom: -40px; /* Reduce spacing */
+}
+
+/* Make the second E vertically reflected */
+.logo-text .reflected-e {
+    display: inline-block;
+    transform: scaleX(-1.8);
+    margin: 0 0.15em;
+}
+
+/* subtitle under the big DIRECTED logo */
+.logo-subtitle {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 30px;             /* smaller font */
+    font-weight: 400;
+    color: white;
+    white-space: normal; /* Allow text wrapping and stretching */
+    pointer-events: none;
+    text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.5); /* Drop shadow */
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    opacity: 0;
+    animation: fadeInDelayed var(--duration-slow) var(--ease-out) forwards;
+    animation-delay: 1.3s;
+}
+
+.slide-to-start-container {
+    width: 450px;
+    margin: 0 auto;
+    opacity: 0;
+    animation: fadeInDelayed var(--duration-slow) var(--ease-out) forwards;
+    animation-delay: 1.55s;
+}
+
+.slide-track {
+    width: 100%;
+    height: 80px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 50px;
+    position: relative;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+    cursor: pointer;
+    transition: background-color var(--duration-base) var(--ease-out),
+                color var(--duration-base) var(--ease-out),
+                border-color var(--duration-base) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
+    top: 50px; /* Move the slide track further down */
+}
+
+.slide-button {
+    position: absolute;
+    left: 5px;
+    top: 5px;
+    width: 70px;
+    height: 70px;
+    background: rgb(255, 255, 255);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    transition: background-color var(--duration-base) var(--ease-out),
+                color var(--duration-base) var(--ease-out),
+                border-color var(--duration-base) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
+    cursor: grab;
+    user-select: none;
+    /* Constraints will be handled in JavaScript */
+}
+
+.slide-button:active {
+    cursor: grabbing;
+    transform: scale(0.95);
+}
+
+.slide-button.sliding {
+    transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Hide main content initially - but let it load in background */
+body:not(.app-started) #topBar,
+body:not(.app-started) #dropdownMenu,
+body:not(.app-started) #mainContent {
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+/* Show main content when app is started */
+body.app-started #topBar {
+    visibility: visible !important;
+    opacity: 1;   /* NOT !important — lets the draw-dim (point 3) win and animate */
+    display: flex !important;
+}
+
+body.app-started #mainContent {
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: flex !important;
+}
+
+/* Add debug controls for testing layer updates */
+#debugControls {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    z-index: 10010;
+}
+
+#debugControls h4 {
+    margin: 0 0 10px 0;
+}
+
+#debugControls button {
+    padding: 5px 10px;
+    margin: 2px;
+}
+
+#debugOutput {
+    font-size: 11px;
+    max-height: 100px;
+    overflow-y: auto;
+    margin-top: 5px;
+}
+
+.logo-container { 
+    width: 100%;
+    height: auto;
+    position: relative; 
+    overflow: visible;
+}
+
+.logo-subcontainer {
+    width: 70%;
+    height:70%;
+
+}
+
+
+/* 1) the animated shape */
+.logo-title {
+    width: 100%;
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    overflow: visible;
+
+}
+
+
+/* 1) the animated shape */
+.logo-animation {
+    width: 250%;
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    overflow: visible;
+    opacity: 0.4;
+}
+
+.logo-animation path {
+    fill: #ffffff;
+    stroke: none;
+}
+
+/* 2) keep text on top */
+.logo-text,
+.logo-subtitle {
+    margin-top: 10px;
+    position: relative;
+    z-index: 2;
+    
+}
+
+#SliderContainer {
+    position: absolute;
+    right: 2%;
+    top: 5%;
+    width: 40px;
+    height: 90%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#parameters {
+    position: relative;
+    top: 0;
+    left: 0;
+    transform: none;
+    color: #575757;
+    font-size: 18px;
+    font-weight: 600;
+    pointer-events: none;
+    margin-bottom: 10px;
+    text-align: center;
+    white-space: nowrap;
+    z-index: 10;
+}
+
+/* #LayerSlider is now the custom component root (div.ls). It just needs a box;
+   the .ls-track child draws the channel. No rotate / writing-mode hacks. */
+#LayerSlider {
+    width: 40px;
+    height: calc(100% - 40px); /* leaves room for the #parameters readout above */
+    padding: 0;
+    margin: 0;
+}
+
+#homingButton {
+    position: absolute;
+    right: 8.5%;
+    bottom: 6%; /* Position above the bottom of the viewport */
+    width: 4.5%; /* Increased minimum button width */
+    height: 6%; /* Increased minimum button height */
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    background: #0000006e;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+#homingButton:active {
+    background: #e3e3e3;
+    transition: background-color 0.2s;
+}
+
+#homingButton svg {
+    width: 70%;
+    height: 70%;
+    fill: #ffffff;
+}
+
+#lockButton {
+    position: absolute;
+    right: 13.5%; /* Place next to the homing button */
+    bottom: 6%; /* Position above the bottom of the viewport */
+    width: 4.5%; /* Increased minimum button width */
+    height: 6%; /* Increased minimum button height */
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    background: #0000006e;
+}
+
+#lockButton.locked {
+    background-color: #e3e3e3;
+    border-radius: 10px;
+    transform: translateY(0);
+    transition: background-color 0.1s;
+}
+
+#lockButton svg {
+  width: 80%;
+  height: 80%;
+  /* the open shackle rotates above the viewBox top — let it render instead of clipping */
+  overflow: visible;
+}
+
+/* (legacy `#lockButton.locked svg path { fill:#000 }` removed — it flood-filled the
+   stroke-only shackle path with black, which read as a black blob inside the closed
+   padlock body. The shackle is stroke-drawn; only .lock-body carries a fill.) */
+#lockButton svg .lock-shackle { fill: none; }
+
+#lockButton.unlocked {
+    background: #0000006e;
+    transition: background-color 0.1s;
+}
+
+#homingButton, #lockButton {
+    visibility: hidden; /* Hide buttons initially */
+}
+
+body.app-started #homingButton, body.app-started #lockButton {
+    visibility: visible; /* Show buttons after splash screen */
+}
+
+/* Completion Screen Overlay Styles */
+.completion-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    z-index: 10010;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transition: opacity var(--duration-base) var(--ease-out),
+                visibility 0s var(--duration-base);
+}
+
+.completion-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+    transition: opacity var(--duration-base) var(--ease-out),
+                visibility 0s;
+}
+
+.completion-modal {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: var(--modal-radius);
+    border: 1px solid rgba(38, 50, 56, 0.10);
+    padding: 40px;
+    text-align: center;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 16px 48px rgba(38, 50, 56, 0.20);
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity var(--duration-base) var(--ease-out),
+                transform var(--duration-base) var(--ease-out);
+}
+
+.completion-overlay.active .completion-modal {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.completion-modal h2 {
+    color: #000000;
+    margin-bottom: 20px;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.completion-modal p {
+    color: #000000;
+    margin-bottom: 30px;
+    font-size: 16px;
+    line-height: 1.5;
+    
+}
+
+/* .timer-display {
+    font-size: 48px;
+    font-weight: bold;
+    color: #cdcdcd;
+    margin: 20px 0;
+} */
+
+.completion-buttons {
+    display: flex;
+    flex-direction: column; /* Arrange buttons in a column */
+    gap: 20px;
+    justify-content: center; /* Center buttons vertically */
+    align-items: center; /* Center buttons horizontally */
+    margin-top: 30px;
+}
+
+.completion-button {
+    width: 50%;
+    height: 50px;
+    padding: 0;
+    border: 1px solid white;
+    border-radius: 8px;
+    background: var(--terracotta-dark);
+    color: #ffffff;
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-base) var(--ease-out),
+                color var(--duration-base) var(--ease-out),
+                border-color var(--duration-base) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
+    outline: none;
+    margin: 3px 0;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.completion-button:hover:not(:disabled) {
+    background: var(--terracotta-hover);
+    transform: translateY(-1px);
+}
+
+.completion-button:active:not(:disabled) {
+    background: var(--terracotta-active);
+    transform: translateY(0);
+}
+
+.completion-button:disabled {
+    background-color: #cccccc;
+    color: #898989;
+    border: 2px solid #cccccc;
+    cursor: not-allowed;
+}
+
+/* Stop Confirmation Overlay Styles */
+.stop-confirmation-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    z-index: 10010;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transition: opacity var(--duration-base) var(--ease-out),
+                visibility 0s var(--duration-base);
+}
+
+.stop-confirmation-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+    transition: opacity var(--duration-base) var(--ease-out),
+                visibility 0s;
+}
+
+.stop-confirmation-modal {
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: var(--modal-radius);
+    border: 1px solid rgba(38, 50, 56, 0.10);
+    padding: 40px;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 16px 48px rgba(38, 50, 56, 0.20);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity var(--duration-base) var(--ease-out),
+                transform var(--duration-base) var(--ease-out);
+}
+
+.stop-confirmation-overlay.active .stop-confirmation-modal {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.stop-confirmation-modal h3 {
+    color: #d32f2f;
+    margin-bottom: 20px;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.stop-confirmation-modal p {
+    color: #666;
+    margin-bottom: 30px;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.stop-confirmation-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+.stop-confirmation-button {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color var(--duration-base) var(--ease-out),
+                color var(--duration-base) var(--ease-out),
+                border-color var(--duration-base) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
+    min-width: 80px;
+}
+
+.stop-confirmation-button.yes {
+    background-color: #d32f2f;
+    color: white;
+}
+
+.stop-confirmation-button.yes:hover {
+    background-color: #b71c1c;
+}
+
+.stop-confirmation-button.no {
+    background-color: #757575;
+    color: white;
+}
+
+.stop-confirmation-button.no:hover {
+    background-color: #424242;
+}
+
+/* Pause/Play button state styles */
+.control-button.paused {
+    background-color: #4CAF50 !important;
+}
+
+.control-button.paused:hover {
+    background-color: #45a049 !important;
+}
+
+/* Setting Buttons in TopBar */
+.setting-button {
+    padding: 8px 16px;
+    border: 1px solid #cccccc;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    border-bottom-left-radius: 15px;
+    background: #0000006e;
+    color: #ffffff;
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-base) var(--ease-out),
+                color var(--duration-base) var(--ease-out),
+                border-color var(--duration-base) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.setting-button .setting-text {
+    flex: 1;
+}
+
+.setting-button .dropdown-arrow {
+    width: 14px;
+    height: 14px;
+    transition: transform 0.3s ease;
+    transform: rotate(0deg);
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.setting-button:active,
+.setting-button.active {
+    background: #e3e3e3;
+    color: #000000;
+    transform: translateY(0);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.setting-button.active .dropdown-arrow {
+    transform: rotate(-90deg);
+}
+
+/* Disabled button styles */
+.setting-button.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+    background: #ffffff4d;
+    border-color: #ccc;
+}
+
+.control-button.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+    background-color: #cccccc !important;
+}
+
+/* Setting Popup Sliders */
+.setting-popup {
+    position: fixed;
+    width: 65px;
+    background: #00000000;
+    border: 1px solid #ccc;
+    border-radius: 0 0 10px 10px;
+    border-top: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    z-index: 10010;
+    display: none;
+    transform-origin: top center;
+    animation: expandDown 0.2s ease-out;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+
+}
+
+@keyframes expandDown {
+    from {
+        transform: translateX(-100%) scaleY(0);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(-100%) scaleY(1);
+        opacity: 1;
+    }
+}
+
+@keyframes collapseUp {
+    from {
+        transform: translateX(-100%) scaleY(1);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(-100%) scaleY(0);
+        opacity: 0;
+    }
+}
+
+.setting-popup.closing {
+    animation: collapseUp 0.2s ease-out forwards;
+}
+
+.setting-popup-content {
+    padding: 15px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    height: 180px;
+    justify-content: center;
+}
+
+.popup-slider {
+    width: 6px;
+    height: 120px;
+    border-radius: 3px;
+    border: solid 1px #000000;
+    background: #ffffff;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    writing-mode: bt-lr;
+    -webkit-writing-mode: vertical-lr;
+    writing-mode: vertical-lr;
+    direction: rtl;
+}
+
+.popup-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 25px;
+    height: 10px;
+    border-radius: 20%;
+    background: var(--terracotta-dark);
+    cursor: pointer;
+    border: 1px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.popup-slider::-moz-range-thumb {
+    width: 25px;
+    height: 10px;
+    border-radius: 20%;
+    background: var(--terracotta-dark);
+    cursor: pointer;
+    border: 1px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.setting-popup-value {
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--terracotta-dark);
+    min-width: 30px;
+    text-align: center;
+    white-space: pre-line; /* Allow line breaks from \n */
+    line-height: 1.2;
+}
+
+/* Logo Small Styles */
+.logo-small-persistent {
+    position: fixed;
+    top: clamp(6px, 1.4vh, 14px);
+    left: clamp(10px, 1.6vw, 20px);
+    width: clamp(40px, 5.5vw, 70px);   /* scales with the (clamped) top bar */
+    height: clamp(40px, 5.5vw, 70px);
+    z-index: 10000;
+    /* On the Slipware (light) splash, match the wordmark exactly: recolor the small
+       logo to dark terracotta (#7A2812) with the same paper-emboss drop-shadow as
+       .logo-title — instead of invert(1), which turned the terracotta cyan on paper. */
+    filter:
+        brightness(0) saturate(100%)
+        invert(17%) sepia(56%) saturate(2200%)
+        hue-rotate(346deg) brightness(94%) contrast(96%)
+        drop-shadow(0 1px 0 rgba(255,255,255,.85))
+        drop-shadow(0 1px 1.5px rgba(122,40,18,.22));
+    transition: filter 0.3s ease, top 0.3s ease, transform 0.3s ease;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    border-radius: 4px;
+}
+
+.logo-small-persistent:hover {
+    transform: scale(1.1);
+}
+
+.logo-small-persistent img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* When app is started, logo transitions to original colors and position */
+body.app-started .logo-small-persistent {
+    filter: invert(0);
+    /* top: 15px; */
+    /* transform: translateY(-50%); */
+}
+
+body.app-started .logo-small-persistent:hover {
+    filter: invert(0);
+    transform: scale(1.1);
+}
+
+/* Mode Toggle Styles */
+.mode-toggle-container {
+    position: absolute;
+    top: 30px;
+    right: 30px;
+    z-index: 10;
+}
+
+.mode-toggle-label {
+    font-size: 18px;
+    font-weight: 700;
+    color: #E0E0E0;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.mode-toggle-rail {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 20px;
+    justify-content: flex-start;
+}
+
+.mode-labels {
+    display: flex;
+    justify-content: space-between;
+    width: 200px;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.mode-label-left,
+.mode-label-right {
+    color: rgba(255, 255, 255, 0.6);
+    transition: background-color var(--duration-base) var(--ease-out),
+                color var(--duration-base) var(--ease-out),
+                border-color var(--duration-base) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
+    opacity: 0.5;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+
+.mode-label-left.active,
+.mode-label-right.active {
+    color: #E0E0E0;
+    font-weight: 700;
+    opacity: 1;
+}
+
+.mode-label-left:not(.active),
+.mode-label-right:not(.active) {
+    opacity: 0.5;
+}
+
+.rail-track {
+    position: relative;
+    width: 120px;
+    height: 33px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 2px solid #ffffff66;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background-color var(--duration-base) var(--ease-out),
+                color var(--duration-base) var(--ease-out),
+                border-color var(--duration-base) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
+}
+
+.rail-slider {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 60px;
+    height: 25px;
+    background: rgb(255, 255, 255);
+    border-radius: 14px;
+    transition: left var(--duration-slow) var(--ease-out),
+                right var(--duration-slow) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out);
+    /* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); */
+    cursor: grab;
+}
+
+.rail-slider:active {
+    cursor: grabbing;
+    transform: scale(0.95);
+}
+
+.rail-slider.demo-active {
+    right: auto;
+    left: 4px;
+    background: rgb(255, 255, 255);
+}
+
+/* Demo Mode Indicator */
+.demo-indicator {
+    position: fixed;
+    top: clamp(16px, 3.4vh, 30px);
+    left: clamp(58px, 8vw, 110px);     /* sits just right of the (clamped) logo */
+    background: transparent;
+    color: #00000060;
+    padding: clamp(4px, 0.8vw, 8px) clamp(8px, 1.4vw, 16px);
+    border-radius: 4px;                /* sharp — tool aesthetic */
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: clamp(10px, 1.3vw, 14px);
+    z-index: 10010;
+    border: 2px solid #00000060;
+    box-shadow: none;
+}
+
+.demo-indicator.visible {
+    display: flex;
+    opacity: 0;
+    animation: fadeInDelayed 0.3s ease forwards;
+    animation-delay: 1.1s;
+}
+
+@keyframes fadeInDelayed {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.demo-indicator-text {
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Studio Mode Modal Styles */
+.studio-mode-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10010;
+}
+
+.studio-mode-content {
+    background: #ffffffb9;
+    padding: 30px;
+    border-radius: 8px;
+    text-align: center;
+    max-width: 400px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.studio-mode-content h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+.studio-mode-content p {
+    color: #666;
+    margin: 20px 0;
+}
+
+.studio-mode-ok-btn {
+    background: var(--terracotta);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+/* Printer Configuration Modal Styles */
+.printer-config-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10010;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transition: opacity var(--duration-base) var(--ease-out),
+                visibility 0s var(--duration-base);
+}
+
+.printer-config-modal.active {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+    transition: opacity var(--duration-base) var(--ease-out),
+                visibility 0s;
+}
+
+.printer-config-content {
+    background: rgba(255, 255, 255, 0.85);
+    padding: 30px;
+    border-radius: var(--modal-radius);
+    border: 1px solid rgba(38, 50, 56, 0.10);
+    max-width: 400px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 16px 48px rgba(38, 50, 56, 0.20);
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity var(--duration-base) var(--ease-out),
+                transform var(--duration-base) var(--ease-out);
+}
+
+.printer-config-modal.active .printer-config-content {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.printer-config-content h2 {
+    margin: 0 0 20px 0;
+    color: #333;
+    font-size: 24px;
+    text-align: center;
+}
+
+.printer-config-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.config-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.config-field label {
+    font-weight: 600;
+    color: #555;
+    font-size: 14px;
+}
+
+.config-field input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background: white;
+}
+
+.config-field input:disabled {
+    background: #f5f5f5;
+    color: #999;
+    cursor: not-allowed;
+}
+
+.config-field input:focus {
+    outline: none;
+    border-color: var(--terracotta);
+    box-shadow: 0 0 0 2px rgba(207, 73, 40, 0.25);
+}
+
+.config-validation-message {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 5px;
+    display: none;
+}
+
+.config-validation-message.show {
+    display: block;
+}
+
+.config-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.config-button {
+    flex: 1;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.config-button.save {
+    background: var(--success);
+    color: white;
+}
+
+.config-button.save:hover {
+    background: #2e6b44;
+}
+
+.config-button.cancel {
+    background: var(--neutral);
+    color: white;
+}
+
+.config-button.cancel:hover {
+    background: #54504d;
+}
+
+
+/* User Preferences Modal */
+.user-preferences-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10010;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transition: opacity var(--duration-base) var(--ease-out),
+                visibility 0s var(--duration-base);
+}
+
+.user-preferences-modal.active {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+    transition: opacity var(--duration-base) var(--ease-out),
+                visibility 0s;
+}
+
+.user-preferences-content {
+    background: rgba(255, 255, 255, 0.7);
+    padding: 30px;
+    border-radius: var(--modal-radius);
+    border: 1px solid rgba(38, 50, 56, 0.10);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 16px 48px rgba(38, 50, 56, 0.20);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity var(--duration-base) var(--ease-out),
+                transform var(--duration-base) var(--ease-out);
+}
+
+.user-preferences-modal.active .user-preferences-content {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.user-preferences-content h2 {
+    margin: 0 0 20px 0;
+    color: #333;
+    font-size: 24px;
+    text-align: center;
+}
+
+.user-preferences-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.preference-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.preference-section h3 {
+    margin: 0;
+    color: #555;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.text-size-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.text-size-btn {
+    flex: 1;
+    padding: 8px 16px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color var(--duration-fast) var(--ease-out),
+                color var(--duration-fast) var(--ease-out),
+                border-color var(--duration-fast) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.text-size-btn:hover {
+    border-color: var(--terracotta);
+}
+
+.text-size-btn.selected {
+    background: var(--terracotta);
+    color: white;
+    border-color: var(--terracotta);
+}
+
+.preference-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.preference-item:last-child {
+    border-bottom: none;
+}
+
+.preference-item label {
+    font-weight: 500;
+    color: #555;
+}
+
+.preference-toggle-btn {
+    padding: 6px 12px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color var(--duration-fast) var(--ease-out),
+                color var(--duration-fast) var(--ease-out),
+                border-color var(--duration-fast) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.preference-toggle-btn:hover {
+    border-color: var(--terracotta);
+}
+
+.preference-toggle-btn.active {
+    background: var(--success);
+    color: white;
+    border-color: var(--success);
+}
+
+.preference-dropdown {
+    padding: 6px 12px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color var(--duration-fast) var(--ease-out),
+                color var(--duration-fast) var(--ease-out),
+                border-color var(--duration-fast) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-fast) var(--ease-out);
+    min-width: 120px;
+}
+
+.preference-dropdown:hover {
+    border-color: var(--terracotta);
+}
+
+.preference-dropdown:focus {
+    outline: none;
+    border-color: var(--terracotta);
+    box-shadow: 0 0 0 2px rgba(207, 73, 40, 0.25);
+}
+
+.preference-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.preference-button {
+    flex: 1;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.preference-button.save {
+    background: var(--success);
+    color: white;
+}
+
+.preference-button.save:hover {
+    background: #2e6b44;
+}
+
+.preference-button.cancel {
+    background: var(--neutral);
+    color: white;
+}
+
+.preference-button.cancel:hover {
+    background: #54504d;
+}
+
+/* Dark Mode Modal */
+.dark-mode-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10010;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transition: opacity var(--duration-base) var(--ease-out),
+                visibility 0s var(--duration-base);
+}
+
+.dark-mode-modal.active {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+    transition: opacity var(--duration-base) var(--ease-out),
+                visibility 0s;
+}
+
+.dark-mode-content {
+    background: white;
+    padding: 30px;
+    border-radius: var(--modal-radius);
+    border: 1px solid rgba(38, 50, 56, 0.10);
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 16px 48px rgba(38, 50, 56, 0.20);
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity var(--duration-base) var(--ease-out),
+                transform var(--duration-base) var(--ease-out);
+}
+
+.dark-mode-modal.active .dark-mode-content {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.dark-mode-content h2 {
+    margin: 0 0 20px 0;
+    color: #333;
+    font-size: 24px;
+}
+
+.dark-mode-content p {
+    color: #666;
+    line-height: 1.5;
+    margin: 10px 0;
+}
+
+.dark-mode-buttons {
+    margin-top: 20px;
+}
+
+.dark-mode-ok-btn {
+    background: var(--terracotta);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.dark-mode-ok-btn:hover {
+    background: var(--terracotta-hover);
+}
+
+/* Thanks Modal */
+.thanks-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10002;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transition: opacity var(--duration-base) var(--ease-out),
+                visibility 0s var(--duration-base);
+}
+
+.thanks-modal.active {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+    transition: opacity var(--duration-base) var(--ease-out),
+                visibility 0s;
+}
+
+.thanks-content {
+    background: white;
+    padding: 30px;
+    border-radius: var(--modal-radius);
+    border: 1px solid rgba(38, 50, 56, 0.10);
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    text-align: center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 16px 48px rgba(38, 50, 56, 0.20);
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity var(--duration-base) var(--ease-out),
+                transform var(--duration-base) var(--ease-out);
+}
+
+.thanks-modal.active .thanks-content {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.thanks-content h2 {
+    margin: 0 0 20px 0;
+    color: #333;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.thanks-text {
+    text-align: left;
+    margin: 20px 0;
+}
+
+.thanks-text p {
+    color: #444;
+    line-height: 1.6;
+    margin: 15px 0;
+    font-size: 16px;
+}
+
+.thanks-text strong {
+    color: #333;
+    font-weight: 600;
+}
+
+.thanks-text em {
+    font-style: italic;
+    color: #555;
+}
+
+.thanks-text a {
+    color: var(--terracotta);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.thanks-text a:hover {
+    color: var(--terracotta-hover);
+    text-decoration: underline;
+}
+
+.thanks-buttons {
+    margin-top: 25px;
+    text-align: center;
+}
+
+.thanks-ok-btn {
+    background: var(--terracotta);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: background 0.3s ease;
+}
+
+.thanks-ok-btn:hover {
+    background: var(--terracotta-hover);
+}
+
+/* Text Size Classes - Apply to entire document except splash screen */
+body.text-size-small {
+    font-size: 12px;
+}
+
+body.text-size-medium {
+    font-size: 14px;
+}
+
+body.text-size-large {
+    font-size: 16px;
+}
+
+body.text-size-small * {
+    font-size: inherit;
+}
+
+body.text-size-medium * {
+    font-size: inherit;
+}
+
+body.text-size-large * {
+    font-size: inherit;
+}
+
+/* Specific scaling for elements with explicit font sizes */
+body.text-size-small #parameters {
+    font-size: 15px; /* scaled down from 18px */
+}
+
+body.text-size-medium #parameters {
+    font-size: 18px; /* original size */
+}
+
+body.text-size-large #parameters {
+    font-size: 21px; /* scaled up from 18px */
+}
+
+body.text-size-small #PrinterLog {
+    font-size: 13px; /* scaled down from 16px */
+}
+
+body.text-size-medium #PrinterLog {
+    font-size: 16px; /* original size */
+}
+
+body.text-size-large #PrinterLog {
+    font-size: 19px; /* scaled up from 16px */
+}
+
+/* Splash screen independent styling - completely decoupled from text size changes */
+.standby-screen {
+    font-size: 16px !important; /* Base font size for splash screen */
+}
+
+.standby-screen * {
+    font-size: inherit !important; /* Inherit from .standby-screen, not from body */
+}
+
+.standby-screen .logo-text {
+    font-size: 70px !important;
+    font-weight: 700 !important;
+    letter-spacing: 3px !important;
+}
+
+.standby-screen .logo-subtitle {
+    font-size: 30px !important;
+    font-weight: 400 !important;
+}
+
+.standby-screen .mode-toggle-label {
+    font-size: 18px !important;
+    font-weight: 700 !important;
+}
+
+.standby-screen .mode-label-left,
+.standby-screen .mode-label-right {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+}
+
+/* Printer Log Toggle is handled in the focus-mode footer rules via
+   `body.printer-log-hidden #PrinterLog .printer-log-content` (collapse to one line).
+   The preference now toggles `.printer-log-hidden` on <body> (see user-preferences.js). */
+
+/* ============================================================
+   LAYOUT 6 — CANVAS-CENTRIC FOCUS MODE (light Slipware reskin)
+   The two canvases fill the viewport; all chrome floats as
+   raised sheets of Slipware paper. Scoped to body.app-started
+   so the splash (already light Slipware) is never touched.
+   #ActionBar / #SliderContainer / #PrinterLog / #seam are
+   direct children of #mainContent (the positioning context).
+   ============================================================ */
+
+/* --- Full-bleed two-pane stage --- */
+body.app-started #leftContainer,
+body.app-started #rightContainer {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
+    display: block;            /* drop the flex column + centering — one canvas per pane */
+    align-items: initial;
+    overflow: visible;
+}
+body.app-started #PathEditorBox {
+    width: 100%;
+    height: 100%;
+    background: var(--surface-canvas, #faf8f6);     /* paper 2D */
+}
+body.app-started #SimulationBox {
+    width: 100%;                                      /* full-bleed — drop the old 85% */
+    height: 100%;
+}
+/* cream 3D stage — the WebGL canvas is alpha:true, so this CSS shows through.
+   paper-2 is a hair warmer than the 2D pane so the two read as distinct surfaces. */
+body.app-started #SimulationView {
+    background: var(--paper-2, #F4ECE2);
+    border-left: none;                               /* the seam is the divider now */
+    border-right: none;
+}
+
+/* --- Draggable seam between the panes --- */
+body.app-started #seam {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 8px;
+    transform: translateX(-50%);
+    z-index: 7;
+    cursor: col-resize;
+    touch-action: none;
+    background: transparent;
+    pointer-events: auto;
+}
+body.app-started #seam::before {                     /* hairline cut + lit lip */
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    transform: translateX(-50%);
+    background: var(--fm-hairline);
+    box-shadow: 1px 0 0 rgba(255, 253, 250, 0.6), -1px 0 0 rgba(60, 18, 8, 0.10);
+    transition: width var(--duration-fast) var(--ease-out),
+                background-color var(--duration-fast) var(--ease-out);
+}
+body.app-started #seam:hover::before,
+body.app-started #seam.dragging::before,
+body.app-started #seam:focus-visible::before {
+    width: 2px;
+    background: var(--ink-20, rgba(122, 40, 18, 0.20));
+}
+body.app-started #seam:focus-visible {
+    outline: 2px solid var(--accent, #cf4928);
+    outline-offset: -2px;
+}
+
+/* --- #topBar -> floating centered pill --- */
+body.app-started #topBar {
+    position: fixed;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    min-height: 0;
+    height: auto;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 22px;
+    padding: 7px 18px;
+    border-bottom: none;
+    border-radius: var(--fm-radius);
+    border: 1px solid var(--fm-hairline);
+    background: var(--fm-glass);
+    -webkit-backdrop-filter: var(--fm-blur);
+    backdrop-filter: var(--fm-blur);
+    box-shadow: var(--fm-raise);
+    z-index: 10004;
+}
+body.app-started #topBarCenter {
+    position: static;          /* was absolute-centered; the pill is content-sized now */
+    left: auto;
+    transform: none;
+    gap: 12px;
+}
+body.app-started #topBarSettings {
+    margin-left: 0;
+    margin-right: 0;           /* drop the 110px balance hack */
+    gap: 16px;
+}
+body.app-started #topBarLeft { gap: 10px; }
+body.app-started #topBar .control-button {
+    width: 38px;               /* compact transport chips (terracotta semantics kept) */
+    height: 38px;
+    border-radius: var(--fm-radius);
+}
+body.app-started #topBar .setting-button {
+    color: var(--ink-72, rgba(122, 40, 18, 0.72));
+    text-shadow: var(--carve-text);
+    border-radius: var(--fm-radius);
+}
+
+/* --- #ActionBar -> horizontal floating tool island, bottom-center over 2D pane --- */
+body.app-started #ActionBar {
+    position: absolute;
+    bottom: 18px;
+    left: calc(var(--split, 50) * 0.5%);   /* center of the 2D pane; tracks the seam */
+    transform: translateX(-50%);
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    padding: 6px;
+    min-width: 0;
+    margin: 0;
+    max-height: none;
+    overflow: visible;
+    border-radius: var(--fm-radius);
+    border: 1px solid var(--fm-hairline);
+    background: var(--fm-glass-strong);
+    -webkit-backdrop-filter: var(--fm-blur);
+    backdrop-filter: var(--fm-blur);
+    box-shadow: var(--fm-raise);
+    pointer-events: auto;
+    z-index: 6;
+}
+body.app-started .action-section {
+    flex-direction: row;
+}
+body.app-started .action-separator {
+    width: 1px;
+    height: 24px;
+    margin-block: 0;
+    margin-inline: 4px;
+}
+/* tooltips flip back to ABOVE the island */
+body.app-started #ActionBar button[data-tip]::after {
+    left: 50%;
+    top: auto;
+    bottom: calc(100% + 8px);
+    transform: translateX(-50%) translateY(4px);
+}
+body.app-started #ActionBar button[data-tip]:hover::after,
+body.app-started #ActionBar button[data-tip]:focus-visible::after {
+    transform: translateX(-50%) translateY(0);
+}
+
+/* --- #SliderContainer -> floating right overlay (frame only; .ls is untouched) --- */
+body.app-started #SliderContainer {
+    position: absolute;
+    right: 16px;
+    top: 20px;           /* the log no longer docks + the plane toggle left the top-right, so the */
+    bottom: 20px;        /* slider grows further upward; top and bottom insets are now symmetric */
+    left: auto;
+    width: auto;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 8px;
+    border-radius: var(--fm-radius);
+    border: 1px solid var(--fm-hairline);
+    background: var(--fm-glass);
+    -webkit-backdrop-filter: var(--fm-blur);
+    backdrop-filter: var(--fm-blur);
+    box-shadow: var(--fm-raise);
+    opacity: 0.6;
+    transition: opacity var(--duration-base) var(--ease-out);
+    pointer-events: auto;
+    z-index: 6;
+}
+body.app-started #SliderContainer:hover,
+body.app-started #SliderContainer:focus-within {
+    opacity: 1;
+}
+body.app-started #LayerSlider {
+    width: 34px;
+    height: auto;
+    flex: 1 1 auto;
+    min-height: 120px;
+}
+body.app-started #parameters {
+    font: 600 11px/1 ui-monospace, "SF Mono", monospace;
+    color: var(--ink-72, rgba(122, 40, 18, 0.72));
+    margin-bottom: 4px;
+    top: auto;
+}
+
+/* --- Right pane = ONE full-height 3D stage, symmetric with the 2D pane across
+   the seam. The printer log is no longer a flow footer that subdivides the pane;
+   it floats over the stage as a glass readout (see below), joining the cube /
+   dock / slider overlay family. #rightContainer is the offset parent. --- */
+body.app-started #rightContainer {
+    position: relative;
+}
+body.app-started #SimulationBox {
+    width: 100%;
+    height: 100%;                 /* full-bleed stage again — no log footer */
+    position: relative;           /* offset parent for cube / dock */
+}
+
+/* --- #PrinterLog → FLOATING GLASS READOUT on the 3D stage --- */
+/* No longer a flow footer / card inside the pane. It floats over the stage's
+   free top-left corner (below the top pill, above the bed) as a translucent
+   glass overlay — a peer to the nav cube / dock / slider. Collapsed = the single
+   live status line; on hover it expands DOWNWARD to reveal recent history. */
+body.app-started #PrinterLog {
+    position: absolute;
+    left: 16px;
+    top: 88px;                    /* clear the floating top pill */
+    right: auto; bottom: auto;
+    width: max-content;
+    max-width: 320px;
+    margin: 0;
+    height: auto;
+    max-height: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 7px 13px 8px;
+    background: var(--fm-glass);
+    -webkit-backdrop-filter: var(--fm-blur);
+    backdrop-filter: var(--fm-blur);
+    border: 1px solid var(--fm-hairline);
+    border-radius: var(--fm-radius);
+    box-shadow: var(--fm-raise);
+    color: var(--ink, #7A2812);
+    font: 500 12px/1.4 ui-monospace, "SF Mono", monospace;
+    overflow: hidden;
+    pointer-events: auto;
+    opacity: 0.9;
+    transition: opacity var(--duration-fast) var(--ease-out);
+    z-index: 8;
+}
+body.app-started #PrinterLog:hover { opacity: 1; }
+/* live status line leads at the TOP; history expands beneath it on hover */
+body.app-started #PrinterLog .printer-log-content {
+    order: 1;
+    display: block;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    padding-left: 16px;          /* align past the live line's status dot */
+    color: rgba(122, 40, 18, 0.5);
+    font-size: 11px;
+    transition: max-height var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out),
+                margin-top var(--duration-base) var(--ease-out),
+                padding-top var(--duration-base) var(--ease-out);
+}
+body.app-started #PrinterLog:hover .printer-log-content {
+    max-height: 84px;
+    overflow-y: auto;
+    opacity: 1;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--fm-hairline);
+}
+@media (prefers-reduced-motion: reduce) {
+    body.app-started #PrinterLog .printer-log-content { transition: none; }
+}
+body.app-started #PrinterLog .printer-messages-container { min-height: 0; }
+body.app-started #PrinterLog .printer-message { margin: 0; padding: 0; min-height: 0; }
+body.app-started #PrinterLog .current-message-highlight {
+    order: 0;                     /* live line on top */
+    position: relative;
+    left: auto; right: auto; top: auto; bottom: auto;
+    height: auto;
+    min-height: 18px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: var(--ink, #7A2812);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    padding: 0;
+}
+/* the live line doubles as the DRAG HANDLE — the whole readout repositions with it */
+body.app-started #PrinterLog .current-message-highlight {
+    cursor: grab;
+    touch-action: none;           /* pointer events drive the drag, not scrolling */
+    user-select: none;
+}
+body.app-started #PrinterLog.log-dragging { opacity: 1; transition: none; }
+body.app-started #PrinterLog.log-dragging .current-message-highlight { cursor: grabbing; }
+/* leading terracotta status dot on the current line */
+body.app-started #PrinterLog .current-message-highlight::before {
+    content: "";
+    flex: 0 0 auto;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent, #cf4928);
+    box-shadow: 0 0 0 2px rgba(207, 73, 40, 0.20);
+}
+/* "Hide Printer Log" preference → collapse to the single most-current line */
+body.printer-log-hidden #PrinterLog .printer-log-content { display: none; }
+/* (log now floats, no longer docked under the slider — keep the tall default) */
+
+/* homing/lock buttons are appended to <body> (threeD-model.js) and float viewport-
+   relative at the bottom — lift them above the docked log, enlarge, reskin to Slipware,
+   and animate the lock's shackle open/closed (point 4). */
+body.app-started #homingButton,
+body.app-started #lockButton {
+    bottom: 100px;
+    width: 52px;
+    height: 52px;
+    color: var(--ink, #7A2812);
+    background: var(--fm-glass-strong);
+    border: 1px solid var(--fm-hairline);
+    box-shadow: var(--fm-raise);
+    border-radius: var(--fm-radius);
+    transition: background-color var(--duration-fast) var(--ease-out),
+                border-color var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-fast) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out);
+}
+body.app-started #homingButton:hover,
+body.app-started #lockButton:hover { background: var(--paper, #F8F1E8); transform: translateY(-1px); }
+body.app-started #homingButton:active,
+body.app-started #lockButton:active { transform: translateY(0); box-shadow: var(--carve-frame); }
+body.app-started #homingButton svg { width: 24px; height: 24px; fill: currentColor; }
+body.app-started #homingButton svg path { fill: currentColor; }
+body.app-started #lockButton svg { width: 26px; height: 26px; }
+body.app-started #lockButton .lock-body { fill: currentColor; }
+body.app-started #lockButton .lock-shackle { stroke: currentColor; }
+/* shackle pivots at its right leg: unlocked = left leg pops UP and swings to the
+   RIGHT (open); locked = shackle drops straight back into the body (closed). */
+body.app-started #lockButton .lock-shackle {
+    transform-box: fill-box;
+    transform-origin: 90% 95%;            /* the right leg's base = the hinge */
+    transition: transform var(--duration-base) var(--ease-out);
+    /* lift + open to the right — kept modest so the raised leg stays inside the
+       button face (the svg is overflow:visible, so nothing clips either way) */
+    transform: translateY(-1px) rotate(30deg);
+}
+body.app-started #lockButton.locked .lock-shackle { transform: translateY(0) rotate(0deg); }
+/* locked → terracotta key with a cream icon */
+body.app-started #lockButton.locked {
+    color: #FBF5EE;
+    background: var(--accent, #cf4928);
+    border-color: var(--terracotta-active, #a8381e);
+    box-shadow: 0 2px 6px rgba(168, 56, 30, 0.30), inset 0 1px 0 rgba(255, 253, 250, 0.25);
+}
+@keyframes lockPop { 0% { transform: scale(1); } 42% { transform: scale(0.9); } 100% { transform: scale(1); } }
+body.app-started #lockButton.locked,
+body.app-started #lockButton.unlocked { animation: lockPop 0.28s var(--ease-out); }
+body.app-started.printer-log-hidden #homingButton,
+body.app-started.printer-log-hidden #lockButton { bottom: 56px; }
+
+/* point 4 — group home + lock into one carved control dock anchored to the
+   bottom-right of the 3D pane, so they read as a deliberate cluster instead of
+   two stray floating buttons. The dock seats inside #SimulationBox
+   (position:relative), so it rides just above the docked printer log and
+   needs no viewport-relative bottom offset. */
+#viewControlsDock { display: none; }
+body.app-started #viewControlsDock {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    position: absolute;
+    right: 96px;        /* sit well LEFT of the layer slider rail (pinned right:16px, ~52px wide) with a comfortable gap */
+    bottom: 16px;
+    padding: 5px;
+    background: var(--fm-glass-strong);
+    border: 1px solid var(--fm-hairline);
+    box-shadow: var(--fm-raise);
+    border-radius: calc(var(--fm-radius) + 5px);
+    z-index: 11;
+}
+/* buttons seat flat inside the dock: drop their individual float + raise so the
+   dock itself is the surface they rest on. */
+body.app-started #viewControlsDock #homingButton,
+body.app-started #viewControlsDock #lockButton {
+    position: static;
+    right: auto;
+    bottom: auto;
+    width: 44px;
+    height: 44px;
+    background: transparent;
+    border: 1px solid transparent;
+    box-shadow: none;
+    border-radius: var(--fm-radius);
+}
+body.app-started #viewControlsDock #homingButton:hover,
+body.app-started #viewControlsDock #lockButton:hover {
+    background: var(--paper, #F8F1E8);
+    transform: none;
+    box-shadow: none;
+}
+body.app-started #viewControlsDock #homingButton:active,
+body.app-started #viewControlsDock #lockButton:active {
+    background: var(--paper-3, #ECE0D1);
+    transform: none;
+    box-shadow: none;
+}
+/* keep locked = terracotta key (2 ids → wins over the flat-seat rule above) */
+body.app-started #viewControlsDock #lockButton.locked {
+    color: #FBF5EE;
+    background: var(--accent, #cf4928);
+    border-color: var(--terracotta-active, #a8381e);
+    box-shadow: inset 0 1px 0 rgba(255, 253, 250, 0.25);
+}
+
+/* point 1: the 3D-plane control now lives in the dock as a BUTTON (not a toggle
+   switch). Seat it like home/lock; drop the rail; the trapezoid plane icon reads
+   ink, and an enabled plane lights the key terracotta (mirrors the locked state). */
+body.app-started #viewControlsDock #planeToggleButton {
+    position: static;
+    top: auto; right: auto; bottom: auto;
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    box-shadow: none;
+    border-radius: var(--fm-radius);
+    color: var(--ink, #7A2812);
+    z-index: auto;
+}
+body.app-started #viewControlsDock #planeToggleButton:hover {
+    background: var(--paper, #F8F1E8) !important;   /* beat the base transparent !important */
+    transform: none;
+}
+body.app-started #viewControlsDock #planeToggleButton:active { background: var(--paper-3, #ECE0D1) !important; }
+body.app-started #viewControlsDock #planeToggleButton .toggle-rail { display: none; }
+body.app-started #viewControlsDock #planeToggleButton .plane-icon { width: 24px; height: 20px; }
+body.app-started #viewControlsDock #planeToggleButton .plane-icon::before {
+    border-color: currentColor;
+    width: 20px; height: 13px;
+    top: 4px; left: 2px;
+}
+body.app-started #viewControlsDock #planeToggleButton.active {
+    color: #FBF5EE;
+    background: var(--accent, #cf4928);
+    border-color: var(--terracotta-active, #a8381e);
+    box-shadow: inset 0 1px 0 rgba(255, 253, 250, 0.25);
+}
+body.app-started #viewControlsDock #planeToggleButton.active .plane-icon::before {
+    border-color: #FBF5EE;
+    background: rgba(255, 253, 250, 0.25);
+}
+
+/* structural-soundness heatmap toggle — seats like the other dock buttons; lights the
+   key terracotta when active (mirrors plane/lock). Default ON. */
+body.app-started #viewControlsDock #heatmapToggleButton {
+    position: static;
+    top: auto; right: auto; bottom: auto;
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid transparent;
+    box-shadow: none;
+    border-radius: var(--fm-radius);
+    color: var(--ink, #7A2812);
+}
+body.app-started #viewControlsDock #heatmapToggleButton:hover { background: var(--paper, #F8F1E8); }
+body.app-started #viewControlsDock #heatmapToggleButton:active { background: var(--paper-3, #ECE0D1); }
+body.app-started #viewControlsDock #heatmapToggleButton .heatmap-ico { width: 22px; height: 22px; }
+body.app-started #viewControlsDock #heatmapToggleButton.active {
+    color: #FBF5EE;
+    background: var(--accent, #cf4928);
+    border-color: var(--terracotta-active, #a8381e);
+    box-shadow: inset 0 1px 0 rgba(255, 253, 250, 0.25);
+}
+
+/* --- in-app persistent logo: render dark-terracotta (carved), not raw cream --- */
+body.app-started .logo-small-persistent,
+body.app-started .logo-small-persistent:hover {
+    filter: brightness(0) saturate(100%) invert(17%) sepia(56%) saturate(2200%)
+            hue-rotate(346deg) brightness(94%) contrast(96%) var(--carve-img, none);
+}
+
+/* ============================================================
+   LAYOUT 6 — VISUAL REWORK ("ink anchors + selective carve")
+   Reintroduces hierarchy to the all-light reskin: solid dark-ink
+   primary controls, terracotta accent ONLY when live, carved
+   (emboss) treatment on recessed components, two-tone stage.
+   Also re-skins the legacy dark contents (transport, settings,
+   popups, dropdown, slider) that the first pass left behind.
+   ============================================================ */
+
+/* --- Two-tone stage: drop the 3D stage to paper-3 so the panes separate --- */
+body.app-started #SimulationView { background: var(--paper-3, #ECE0D1); }
+
+/* --- Pill identity: logo + DEMO chip live IN the bar; hide the floating ones --- */
+body.app-started #logoButton.logo-small-persistent { display: none; }
+body.app-started #demoIndicator { display: none !important; }
+body.app-started #topBarLeft { display: flex; align-items: center; gap: 8px; }
+body:not(.app-started) #topBarLeft { display: none; }
+/* Logo engraved into the top-left of the 2D pane (point 5) — a carved brand mark,
+   not pill chrome. The carve filter recolors the cream SVG to dark terracotta and
+   adds the engraved (light-below / dark-above) drop-shadow so it reads as pressed
+   into the paper. */
+body.app-started .pane-logo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    /* point 2 — mark only: the tagline-free monogram (Logo small.svg), sized by
+       height and centered. Sharper + a touch more present than the old faint
+       wordmark, but still a watermark engraved into the bed. */
+    width: auto;
+    height: 34%;
+    max-height: 260px;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.085;
+    filter: brightness(0) saturate(100%) invert(17%) sepia(56%) saturate(2200%)
+            hue-rotate(346deg) brightness(94%) contrast(96%);
+}
+body:not(.app-started) .pane-logo { display: none; }
+/* DEMO chip — rotated 90° to the left (reads bottom-to-top) */
+body.app-started .pill-demo-chip {
+    display: none;
+    padding: 7px 3px; border-radius: var(--fm-radius);
+    background: var(--accent); color: #FBF5EE;
+    font: 600 10px/1 "SF Pro Display", -apple-system, system-ui, sans-serif;
+    letter-spacing: .16em;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+}
+body.app-started.demo-mode .pill-demo-chip { display: inline-block; }
+
+/* --- Transport (point 4): tactile carved-Slipware keys --- */
+body.app-started #topBar .control-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-fast) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                color var(--duration-fast) var(--ease-out);
+}
+body.app-started #topBar .control-button svg { width: 16px; height: 16px; }
+/* PLAY / primary — a solid ink key, raised with a lit top edge, pressable */
+body.app-started #topBar .pause-button {
+    background: linear-gradient(180deg, var(--ink-2, #882D17), #6a230f);
+    color: #FBF5EE;
+    border: 1px solid #5e1f0d;
+    box-shadow: 0 1px 2px rgba(60, 18, 8, 0.35), inset 0 1px 0 rgba(255, 253, 250, 0.16);
+}
+body.app-started #topBar .pause-button:hover {
+    background: linear-gradient(180deg, #93331b, var(--ink, #7A2812));
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(60, 18, 8, 0.30), inset 0 1px 0 rgba(255, 253, 250, 0.18);
+}
+body.app-started #topBar .pause-button:active {
+    transform: translateY(0);
+    box-shadow: inset 0 2px 4px rgba(60, 18, 8, 0.5);
+}
+/* LIVE (printing/paused) — the one terracotta moment */
+body.app-started #topBar .control-button.paused {
+    background: linear-gradient(180deg, var(--accent-soft, #D97A5C), var(--accent, #cf4928)) !important;
+    color: #FBF5EE;
+    border-color: var(--terracotta-active, #a8381e);
+    box-shadow: 0 1px 2px rgba(168, 56, 30, 0.4), inset 0 1px 0 rgba(255, 253, 250, 0.25);
+}
+body.app-started #topBar .control-button.paused:hover { transform: translateY(-1px); }
+/* STOP — classic red danger key (point 4) with a Printer-Config-style hover lift (point 3) */
+body.app-started #topBar .stop-button {
+    background: #D8281F;
+    color: #FFFFFF;
+    border: 1px solid #A81C16;
+    box-shadow: 0 1px 2px rgba(120, 18, 12, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+body.app-started #topBar .stop-button svg { width: 14px; height: 14px; }
+body.app-started #topBar .stop-button:hover {
+    background: #E63A30;
+    color: #FFFFFF;
+    border-color: #C0211A;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(120, 18, 12, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+body.app-started #topBar .stop-button:active {
+    transform: translateY(0);
+    box-shadow: inset 0 2px 4px rgba(80, 12, 8, 0.45);
+}
+
+/* tool-bar icons → ink for legibility on the paper glass (point 2) */
+body.app-started #ActionBar button { color: var(--ink, #7A2812); }
+
+/* --- Setting buttons → carved Slipware labels (fixes the dark legacy chips) --- */
+body.app-started #topBar .setting-button {
+    background: transparent; border: 1px solid transparent;
+    color: var(--ink-72); text-shadow: var(--carve-text);
+    border-radius: var(--fm-radius); padding: 6px 10px;
+}
+body.app-started #topBar .setting-button:hover {
+    background: rgba(122, 40, 18, .06); border-color: var(--fm-hairline); color: var(--ink);
+}
+body.app-started #topBar .setting-button.active {
+    background: var(--paper-3); color: var(--ink); box-shadow: var(--carve-frame); transform: none;
+}
+
+/* --- Setting popups → light glass (were transparent/grey) --- */
+body.app-started .setting-popup {
+    background: var(--fm-glass-strong); border: 1px solid var(--fm-hairline); box-shadow: var(--fm-raise);
+}
+body.app-started .popup-slider { background: var(--paper-3); border: 1px solid var(--ink-20); }
+body.app-started .setting-popup-value { color: var(--ink); }
+
+/* --- Hamburger: drop the leftover full-height "tab" relic; ink bars --- */
+body.app-started .hamburger-menu::before { display: none; }
+body.app-started .hamburger-menu span { background-color: var(--ink); }
+
+/* --- Dropdown menu → light glass panel that hangs under the pill (point 7) --- */
+body.app-started .dropdown-menu {
+    left: auto; width: min(680px, 94vw); height: auto; max-height: 62vh;
+    border-radius: var(--fm-radius);
+    border: 1px solid var(--fm-hairline);
+    background: var(--fm-glass-strong);
+    -webkit-backdrop-filter: var(--fm-blur); backdrop-filter: var(--fm-blur);
+    box-shadow: var(--fm-raise);
+    transform-origin: top right;
+    transform: translateY(-8px) scale(.98); opacity: 0;
+    pointer-events: none;   /* closed menu stays on-screen (opacity 0) — must NOT block clicks */
+    transition: transform var(--duration-base) var(--ease-out), opacity var(--duration-base) var(--ease-out);
+}
+body.app-started .dropdown-menu.open { transform: translateY(0) scale(1); opacity: 1; pointer-events: auto; }
+/* side-by-side panels (point 7) */
+body.app-started .dropdown-menu-content { flex-direction: row; flex-wrap: wrap; align-items: stretch; padding: 16px; gap: 16px; }
+body.app-started .dropdown-container { background: transparent; border: 1px solid var(--fm-hairline); flex: 1 1 220px; width: auto; }
+body.app-started .dropdown-label { color: var(--ink-72); opacity: 1; }
+/* color scheme stays a light segmented selector so the active choice reads */
+body.app-started .color-scheme-btn {
+    background: var(--paper-2); color: var(--ink); border: 1px solid var(--ink-20);
+}
+body.app-started .color-scheme-btn:hover { background: rgba(207, 73, 40, .12); color: var(--ink); }
+body.app-started .color-scheme-btn.active { background: var(--ink); color: #FBF5EE; border-color: var(--ink); }
+
+/* point 5 (updated): the hamburger-dropdown ACTION buttons share the landing "Printer
+   Config" button's MOTION — a terracotta frame that GROWS on hover (scale 1.06) with the
+   label held perfectly still, and a quick retract on press (scale .96). The fill + soft
+   drop shadow live on a ::before frame so ONLY the frame scales, never the text.
+   (Supersedes the earlier "translateY(-1px) lift, no expansion" decision — the user
+   asked for the landing button's pre-click expansion here too.) */
+body.app-started .export-gcode-dropdown-btn,
+body.app-started .studio-mode-btn,
+body.app-started .user-preferences-btn {
+    position: relative;
+    isolation: isolate;       /* ::before frame scales on its own layer */
+    background: transparent;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    box-shadow: none;
+    transform: none;
+}
+body.app-started .export-gcode-dropdown-btn::before,
+body.app-started .studio-mode-btn::before,
+body.app-started .user-preferences-btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: 8px;
+    background: var(--terracotta-mid);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transform-origin: center;
+    transition: transform var(--duration-base) var(--ease-out),
+                background-color var(--duration-base) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out);
+}
+body.app-started .export-gcode-dropdown-btn:hover,
+body.app-started .studio-mode-btn:hover,
+body.app-started .user-preferences-btn:hover {
+    background: transparent;
+    color: #ffffff;
+    transform: none;          /* the frame grows, not the button — label stays crisp */
+}
+body.app-started .export-gcode-dropdown-btn:hover::before,
+body.app-started .studio-mode-btn:hover::before,
+body.app-started .user-preferences-btn:hover::before {
+    background: var(--terracotta-hover);
+    transform: scale(1.06);
+}
+body.app-started .export-gcode-dropdown-btn:active,
+body.app-started .studio-mode-btn:active,
+body.app-started .user-preferences-btn:active {
+    background: transparent;
+    transform: none;
+}
+body.app-started .export-gcode-dropdown-btn:active::before,
+body.app-started .studio-mode-btn:active::before,
+body.app-started .user-preferences-btn:active::before {
+    background: var(--terracotta-active);
+    transform: scale(.96);
+    transition: transform 110ms var(--ease-out);   /* fast retract, like the landing btn */
+}
+
+/* --- Layer slider facelift: carved terracotta instrument + always-on readout (point 6) --- */
+body.app-started .ls-track {
+    background: var(--paper-3); border: 1px solid var(--ink-20); box-shadow: var(--carve-frame);
+}
+body.app-started .ls-fill {
+    /* printed region = greyed-out disabled zone (mirrors the 3D printed-layer grey) */
+    background: linear-gradient(180deg, #B7BEC5, #99A1A9);
+    box-shadow: inset 0 0 0 1px rgba(90, 98, 106, 0.45);
+}
+body.app-started .ls-ticks rect { fill: var(--ink-55); }
+body.app-started .ls-hoverline { background: var(--accent); }
+body.app-started .ls-thumb {
+    height: 18px;
+    background:
+        linear-gradient(var(--accent), var(--accent)) center / 100% 1.5px no-repeat,
+        linear-gradient(180deg, #FFFDFA, var(--paper-2));
+    border: 1px solid var(--ink-20); border-radius: var(--fm-radius);
+    box-shadow: var(--knob-float), var(--knob-edge);
+}
+body.app-started .ls.dragging .ls-thumb { box-shadow: 0 0 0 4px var(--ink-12), var(--knob-float); }
+body.app-started .ls-readout {
+    color: var(--ink); background: var(--fm-glass-strong);
+    border: 1px solid var(--fm-hairline); border-radius: var(--fm-radius);
+    box-shadow: var(--fm-raise); opacity: 1;
+    padding: 3px 6px; display: flex; gap: 2px; align-items: baseline;
+}
+body.app-started .ls-readout .ls-cur { font: 700 12px/1 ui-monospace, "SF Mono", monospace; color: var(--ink); }
+body.app-started .ls-readout .ls-tot { font: 600 10px/1 ui-monospace, "SF Mono", monospace; color: var(--ink-55); font-style: normal; }
+body.app-started #SliderContainer { opacity: 0.92; }
+body.app-started #parameters { color: var(--ink); opacity: 1; }
+
+/* --- Point 3: bars rest at 70%, full on hover, recede to 40% while drawing --- */
+body.app-started #topBar,
+body.app-started #ActionBar {
+    opacity: 0.7;
+    transition: opacity var(--duration-base) var(--ease-out),
+                transform var(--duration-base) var(--ease-out);
+}
+body.app-started #topBar:hover,
+body.app-started #ActionBar:hover { opacity: 1; }
+body.app-started.drawing #topBar,
+body.app-started.drawing #ActionBar { opacity: 0.4; pointer-events: none; }
+body.app-started.drawing #topBar:hover,
+body.app-started.drawing #ActionBar:hover { opacity: 1; pointer-events: auto; }
+
+/* --- Point 1: drag grips + horizontal/vertical orientation for the bars --- */
+.bar-grip {
+    flex: 0 0 auto;
+    align-self: stretch;
+    width: 20px;
+    min-width: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    color: var(--ink-72, rgba(122, 40, 18, 0.72));
+    cursor: grab;
+    touch-action: none;
+    border-radius: var(--fm-radius);
+}
+/* crisp 2-col dot grid (a vertical handle for a horizontal bar) */
+.bar-grip::before {
+    content: "";
+    width: 7px;
+    height: 18px;
+    background-image: radial-gradient(currentColor 1.1px, transparent 1.6px);
+    background-size: 4px 5px;
+    background-position: center;
+}
+.bar-grip:hover { color: var(--ink); background: rgba(122, 40, 18, 0.10); }
+.bar-grip:active,
+.bar-dragging .bar-grip { cursor: grabbing; }
+.bar-grip:focus-visible { outline: 2px solid var(--accent, #cf4928); outline-offset: -2px; }
+/* grip turns into a horizontal handle when the bar is vertical */
+body.app-started #ActionBar.vertical .bar-grip,
+body.app-started #topBar.vertical .bar-grip {
+    align-self: stretch;
+    width: auto;
+    height: 20px;
+    min-height: 20px;
+}
+body.app-started #ActionBar.vertical .bar-grip::before,
+body.app-started #topBar.vertical .bar-grip::before {
+    width: 18px;
+    height: 7px;
+    background-size: 5px 4px;
+}
+
+/* vertical ActionBar (its default = a left rail, mirroring the slider on the right) */
+body.app-started #ActionBar.vertical {
+    flex-direction: column;
+    left: 16px;
+    right: auto;
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+}
+body.app-started #ActionBar.vertical .action-section { flex-direction: column; }
+body.app-started #ActionBar.vertical .action-separator { width: 24px; height: 1px; margin: 4px 0; }
+body.app-started #ActionBar.vertical button[data-tip]::after {
+    left: calc(100% + 8px);
+    right: auto;
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%) translateX(-4px);
+}
+body.app-started #ActionBar.vertical button[data-tip]:hover::after,
+body.app-started #ActionBar.vertical button[data-tip]:focus-visible::after {
+    transform: translateY(-50%) translateX(0);
+}
+
+/* vertical topBar (a rail) */
+body.app-started #topBar.vertical { flex-direction: column; align-items: stretch; gap: 8px; }
+body.app-started #topBar.vertical #topBarLeft,
+body.app-started #topBar.vertical #topBarCenter,
+body.app-started #topBar.vertical #topBarSettings {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+}
+
+/* while dragging a bar, don't let the canvas underneath grab the pointer */
+body.app-started.bar-dragging #PathEditorView,
+body.app-started.bar-dragging #SimulationView { pointer-events: none; }
+
+/* B7 — responsive stacking (focus mode): stack the panes vertically, hide the
+   seam, keep the pill centered, and reflow the floating overlays over their panes. */
+@media (max-aspect-ratio: 1/1), (max-width: 720px) {
+    #mainContent {
+        flex-direction: column;
+    }
+    body.app-started #leftContainer,
+    body.app-started #rightContainer {
+        flex: 1 1 0 !important;   /* neutralize the inline seam flex-basis */
+        width: 100%;
+    }
+    body.app-started #seam {
+        display: none;            /* no horizontal seam when stacked */
+    }
+    body.app-started #topBar {
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        max-width: calc(100vw - 16px);
+        flex-wrap: wrap;
+        padding-left: 12px;
+    }
+    body.app-started #topBarCenter {
+        position: static;
+        left: auto;
+        transform: none;
+        margin-left: 0 !important; /* override the JS hack's inline !important margin */
+    }
+    body.app-started #topBarSettings {
+        margin-right: 0;
+    }
+    body.app-started #ActionBar {
+        left: 50%;                /* center over the (top) 2D pane */
+        bottom: auto;
+        top: calc(50% - 22px);
+    }
+    body.app-started #SliderContainer {
+        right: 8px;
+        top: auto;
+        bottom: calc(50% + 8px);  /* over the (bottom) 3D pane */
+        height: 38%;
+    }
+    body.app-started #PrinterLog {
+        width: calc(100vw - 32px);
+    }
+    .current-message-highlight {
+        height: auto;
+        min-height: 30px;
+    }
+}
+
+/* Contour loader — P8 D-05: terracotta stroke-dashoffset loop during printing */
+.contour-loader {
+    display: none;
+    width: 120px;
+    height: 120px;
+    margin: 8px auto;
+}
+
+.contour-loader.visible {
+    display: block;
+}
+
+.contour-loader path {
+    stroke: #cf4928;
+    stroke-width: 2;
+    fill: none;
+    stroke-dasharray: var(--path-len, 600);
+    stroke-dashoffset: var(--path-len, 600);
+    animation: contourDraw 1.4s var(--ease-out) infinite alternate;
+}
+
+@keyframes contourDraw {
+    0%   { stroke-dashoffset: var(--path-len, 600); }
+    100% { stroke-dashoffset: 0; }
+}
+
+/* Global reduced-motion override — P11. Must remain the LAST rule in this file.
+   Disables all transitions and animations (modal entrances, splash line-draw,
+   layer-add tween, loader loop, pulse-once) in a single block. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+
+/* ===========================================================================
+   Destructive printer-config change flow: warning + stop-session modals
+   (Slipware focus-mode look — warm paper/glass card, terracotta primary)
+   =========================================================================== */
+.config-change-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(40, 22, 14, 0.45);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10020; /* above the printer-config modal (10010) */
+}
+
+.config-change-overlay.active {
+    display: flex;
+}
+
+.config-change-modal {
+    background: rgba(252, 247, 240, 0.92);
+    border: 1px solid rgba(136, 45, 23, 0.25);
+    border-radius: 14px;
+    padding: 32px 36px;
+    text-align: center;
+    max-width: 440px;
+    width: 90%;
+    box-shadow: 0 16px 40px rgba(60, 30, 18, 0.35);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+}
+
+.config-change-modal h3 {
+    margin: 0 0 14px 0;
+    color: #882D17;
+    font-size: 22px;
+    font-weight: 700;
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+}
+
+.config-change-modal p {
+    margin: 0 0 26px 0;
+    color: #5a3b2c;
+    font-size: 15px;
+    line-height: 1.55;
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+}
+
+.config-change-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.config-change-button {
+    flex: 1 1 0;
+    min-width: 110px;
+    height: 46px;
+    padding: 0 18px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    outline: none;
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Primary action — terracotta filled (matches .printer-config-btn) */
+.config-change-button.accept {
+    background: #882D17;
+    color: #ffffff;
+    border-color: #882D17;
+}
+
+.config-change-button.accept:hover,
+.config-change-button.accept:active {
+    background: #cf4928;
+    border-color: #cf4928;
+    transform: translateY(-1px);
+}
+
+/* Secondary export — outlined terracotta on paper */
+.config-change-button.export {
+    background: rgba(136, 45, 23, 0.08);
+    color: #882D17;
+    border-color: rgba(136, 45, 23, 0.45);
+}
+
+.config-change-button.export:hover:not(:disabled) {
+    background: rgba(136, 45, 23, 0.16);
+    transform: translateY(-1px);
+}
+
+.config-change-button.export:disabled {
+    background: rgba(150, 130, 120, 0.12);
+    color: #a99a90;
+    border-color: rgba(150, 130, 120, 0.3);
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Cancel — quiet neutral */
+.config-change-button.cancel {
+    background: transparent;
+    color: #7a6155;
+    border-color: rgba(122, 97, 85, 0.4);
+}
+
+.config-change-button.cancel:hover {
+    background: rgba(122, 97, 85, 0.1);
+    color: #5a3b2c;
+}
+
+.config-change-button:focus-visible {
+    box-shadow: 0 0 0 3px rgba(207, 73, 40, 0.4);
+}
+
+/* ===========================================================================
+   Toast notifications (Slipware terracotta-on-paper)
+   =========================================================================== */
+.toast-container {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    z-index: 10030; /* above all modals */
+    pointer-events: none;
+}
+
+.toast {
+    pointer-events: auto;
+    min-width: 200px;
+    max-width: 360px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    background: rgba(252, 247, 240, 0.96);
+    color: #5a3b2c;
+    border: 1px solid rgba(136, 45, 23, 0.2);
+    border-left: 4px solid #882D17;
+    box-shadow: 0 8px 24px rgba(60, 30, 18, 0.28);
+    font-size: 14px;
+    font-weight: 600;
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    text-align: center;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.toast.toast-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast-success {
+    border-left-color: #882D17;
+}
+
+.toast-error {
+    border-left-color: #c0392b;
+    color: #8a2c20;
+}
+
+.toast-warning {
+    border-left-color: #cf8a28;
+}
+
+.toast-info {
+    border-left-color: #7a6155;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toast {
+        transition: opacity 0.01s linear;
+        transform: none;
+    }
+    .toast.toast-visible {
+        transform: none;
+    }
+}
+
+
+
+/* Anchored controls: reserve space above and below the 2D canvas.
+   Bars live in #leftContainer so panel resizing never leaves them over the 3D view. */
+body.app-started #leftContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--surface-canvas, #faf8f6);
+}
+body.app-started #leftContainer > #PathEditorBox {
+    flex: 1 1 0;
+    min-height: 0;
+    height: auto;
+    width: 100%;
+}
+body.app-started #leftContainer > #topBar,
+body.app-started #leftContainer > #ActionBar {
+    position: relative;
+    inset: auto;
+    transform: none;
+    flex: 0 0 auto;
+    opacity: 1;
+    max-width: calc(100% - 24px);
+    box-sizing: border-box;
+    transition: opacity var(--duration-fast) var(--ease-out);
+}
+body.app-started #leftContainer > #topBar {
+    margin: 0 12px;
+    width: max-content;
+    padding: 6px 10px;
+    gap: 8px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    z-index: 8;
+}
+body.app-started #leftContainer > #topBar #topBarCenter {
+    position: static;
+    transform: none;
+    margin-left: 0 !important;
+    gap: 6px;
+}
+body.app-started #leftContainer > #topBar #topBarSettings {
+    gap: 2px;
+    min-width: 0;
+    margin: 0;
+}
+body.app-started #leftContainer > #topBar .control-button,
+body.app-started #leftContainer > #topBar #menuButton {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+}
+body.app-started #leftContainer > #topBar .setting-button {
+    min-height: 44px;
+    padding: 6px;
+    gap: 4px;
+}
+body.app-started #leftContainer > #ActionBar {
+    margin: 0 12px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    overflow: visible;
+    z-index: 8;
+}
+
+/* A shared instrument-panel surface and button language for both tool groups. */
+body.app-started :is(#ActionBar, #viewControlsDock) {
+    --tool-ink: var(--ink, #7a2812);
+    gap: 6px;
+    padding: 6px;
+    border: 1px solid var(--fm-hairline);
+    border-radius: var(--ab-radius);
+    background: var(--fm-glass-strong);
+    -webkit-backdrop-filter: var(--fm-blur);
+    backdrop-filter: var(--fm-blur);
+    box-shadow: var(--fm-raise);
+    opacity: 1;
+}
+body.app-started :is(#ActionBar, #viewControlsDock) :is(button, #planeToggleButton, #homingButton, #lockButton, #heatmapToggleButton) {
+    position: relative;
+    inset: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--ab-radius);
+    color: var(--tool-ink);
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+    animation: none;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-out),
+                color var(--duration-fast) var(--ease-out),
+                border-color var(--duration-fast) var(--ease-out);
+}
+body.app-started :is(#ActionBar, #viewControlsDock) :is(button, #planeToggleButton, #homingButton, #lockButton, #heatmapToggleButton):hover {
+    background: rgba(207, 73, 40, 0.10) !important;
+    color: var(--terracotta-dark);
+    transform: none;
+    box-shadow: none;
+}
+body.app-started :is(#ActionBar, #viewControlsDock) :is(button, #planeToggleButton, #homingButton, #lockButton, #heatmapToggleButton):active {
+    background: rgba(207, 73, 40, 0.18) !important;
+    transform: none;
+}
+body.app-started :is(#ActionBar, #viewControlsDock) :is(button, #planeToggleButton, #lockButton, #heatmapToggleButton):is(.active, .locked, [aria-pressed="true"]) {
+    background: var(--terracotta);
+    border-color: var(--terracotta-dark);
+    color: var(--off-white, #f4ece2);
+    box-shadow: none;
+}
+body.app-started :is(#ActionBar, #viewControlsDock) :is(button, #planeToggleButton, #lockButton, #heatmapToggleButton):is(.active, .locked, [aria-pressed="true"]):hover {
+    background: var(--terracotta-hover) !important;
+    color: var(--off-white, #f4ece2);
+}
+body.app-started #viewControlsDock :is(#homingButton, #lockButton, #heatmapToggleButton) svg {
+    width: var(--ab-icon);
+    height: var(--ab-icon);
+    fill: none;
+}
+body.app-started #viewControlsDock #homingButton svg path,
+body.app-started #viewControlsDock #lockButton .lock-body {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+}
+body.app-started #viewControlsDock #planeToggleButton .plane-icon::before {
+    border-color: currentColor;
+    background: transparent;
+    border-width: 2px;
+}
+body.app-started #viewControlsDock {
+    max-width: calc(100% - 112px);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+@container (max-width: 600px) {
+    body.app-started #leftContainer > #topBar { width: calc(100% - 24px); }
+    body.app-started #leftContainer > #topBar #topBarCenter { flex: 1; }
+    body.app-started #leftContainer > #topBar #topBarSettings {
+        order: 4;
+        flex: 1 0 100%;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    body.app-started #leftContainer > #topBar .setting-button { flex: 1; }
+}
+
+
+/* Keep the menu glyph in the same stroke family as the tool icons. */
+body.app-started #topBar #menuButton { align-items: center; gap: 5px; }
+body.app-started #topBar #menuButton span { width: 24px; height: 2px; flex: 0 0 2px; border-radius: 1px; }
+body.app-started #topBar #menuButton.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+body.app-started #topBar #menuButton.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* Anchored printer status: click to keep history open, hover to preview. */
+body.app-started #PrinterLog {
+    top: 12px;
+    max-width: min(320px, calc(100% - 112px));
+    padding: 0 12px;
+    border-radius: var(--ab-radius, 4px);
+}
+body.app-started #PrinterLog .current-message-highlight {
+    min-height: 44px;
+    width: 100%;
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+body.app-started #PrinterLog .current-message-highlight::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    flex: 0 0 6px;
+    margin-left: auto;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(45deg) translateY(-2px);
+}
+body.app-started #PrinterLog.log-expanded .current-message-highlight::after {
+    transform: rotate(225deg) translate(-2px, -1px);
+}
+body.app-started #PrinterLog .current-message-highlight:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
+}
+body.app-started #PrinterLog:not(.log-expanded) .printer-log-content {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    margin-top: 0;
+    border-top: 0;
+    overflow: hidden;
+}
+body.app-started #PrinterLog.log-expanded .printer-log-content {
+    max-height: min(240px, 34vh);
+    overflow-y: auto;
+    opacity: 1;
+    padding-top: 8px;
+    margin: 0 0 12px;
+    border-top: 1px solid var(--fm-hairline);
+}
+body.app-started.printer-log-hidden #PrinterLog,
+body.printer-log-hidden #PrinterLog {
+    display: none;
+}
+body.app-started #PrinterLog:not(.log-expanded) .printer-log-content {
+    padding-bottom: 0;
+}
+body.app-started #PrinterLog .current-message-highlight > .log-severity {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+/* Four complete entries including the live status, plus a soft glimpse of five. */
+body.app-started #PrinterLog.log-expanded .printer-log-content {
+    height: auto;
+    max-height: var(--log-history-height, none);
+    box-sizing: border-box;
+    padding-bottom: 0;
+}
+body.app-started #PrinterLog .printer-log-scroll-cue {
+    display: none;
+    position: absolute;
+    bottom: 12px;
+    left: 28px;
+    right: 12px;
+    height: var(--log-cue-height, 8px);
+    pointer-events: none;
+    background: linear-gradient(to bottom, transparent, var(--fm-glass));
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 55%);
+    mask-image: linear-gradient(to bottom, transparent, black 55%);
+}
+body.app-started #PrinterLog.log-expanded.log-more-below .printer-log-scroll-cue {
+    display: block;
+}
+body.app-started #PrinterLog .printer-log-content {
+    transition: max-height var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+    body.app-started #PrinterLog .printer-log-content { transition: none; }
+}
+
+/* Edge notches: one radius for every exposed corner and curved join. */
+:root { --notch-radius: 6px; }
+body.app-started #leftContainer > #topBar,
+body.app-started #leftContainer > #ActionBar {
+    margin-block: 0;
+    background: var(--paper, #f8f1e8);
+    border: 1px solid var(--fm-hairline);
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+body.app-started #leftContainer > #topBar {
+    border-top: 0;
+    border-radius: 0 0 var(--notch-radius) var(--notch-radius);
+}
+body.app-started #leftContainer > #ActionBar {
+    border-bottom: 0;
+    border-radius: var(--notch-radius) var(--notch-radius) 0 0;
+}
+/* The log is a continuation of the 2D surface into the 3D stage. */
+body.app-started #PrinterLog {
+    left: 0;
+    background: var(--surface-canvas, #faf8f6);
+    border: 0;
+    border-radius: 0 0 var(--notch-radius) 0;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    opacity: 1;
+    overflow: visible;
+}
+body.app-started #PrinterLog::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -3px;
+    width: 4px;
+    background: var(--surface-canvas, #faf8f6);
+    pointer-events: none;
+}
+body.app-started #PrinterLog::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: var(--notch-radius);
+    height: var(--notch-radius);
+    background: radial-gradient(circle at 100% 100%, transparent calc(var(--notch-radius) - 0.5px), var(--surface-canvas, #faf8f6) var(--notch-radius));
+    pointer-events: none;
+}
+body.app-started #PrinterLog .printer-log-scroll-cue {
+    background: linear-gradient(to bottom, transparent, var(--surface-canvas, #faf8f6));
+}
+
+/* Soft relief over the 3D stage; the panel join itself stays seamless. */
+body.app-started #PrinterLog {
+    filter: drop-shadow(3px 5px 5px rgba(92, 58, 39, 0.14));
+    clip-path: inset(0 -24px -48px 0);
+}
+body.app-started #seam::before {
+    display: none;
+}
+
+/* Inverse notches: brown ceramic with warm, light controls. */
+body.app-started.inverse-bars #leftContainer > #topBar,
+body.app-started.inverse-bars #leftContainer > #ActionBar {
+    --tool-ink: var(--appearance-light, #f8f1e8);
+    background: var(--appearance-bar, #882d17);
+    border-color: var(--appearance-bar, #882d17);
+    color: var(--appearance-light, #f8f1e8);
+}
+body.app-started.inverse-bars #leftContainer #topBar .setting-button,
+body.app-started.inverse-bars #leftContainer #ActionBar button {
+    color: var(--appearance-light, #f8f1e8);
+    text-shadow: none;
+}
+body.app-started.inverse-bars #leftContainer #topBar #menuButton {
+    color: var(--appearance-light, #f8f1e8);
+    background: transparent;
+    box-shadow: none;
+}
+body.app-started.inverse-bars #leftContainer #topBar #menuButton span {
+    background: currentColor;
+}
+body.app-started.inverse-bars #leftContainer #topBar .setting-button:hover,
+body.app-started.inverse-bars #leftContainer #topBar #menuButton:hover,
+body.app-started.inverse-bars #leftContainer #ActionBar button:hover {
+    background: rgba(248, 241, 232, 0.14) !important;
+    color: var(--appearance-light, #f8f1e8);
+    border-color: transparent;
+    box-shadow: none;
+}
+body.app-started.inverse-bars #leftContainer #topBar .setting-button.active,
+body.app-started.inverse-bars #leftContainer #ActionBar button:is(.active, [aria-pressed="true"]) {
+    background: var(--appearance-light, #f8f1e8) !important;
+    color: var(--appearance-bar, #882d17);
+    border-color: var(--appearance-light, #f8f1e8);
+    box-shadow: none;
+}
+body.app-started.inverse-bars #leftContainer #ActionBar .action-separator {
+    background: rgba(248, 241, 232, 0.25);
+}
+body.app-started.inverse-bars #leftContainer #topBar .pill-demo-chip {
+    background: transparent;
+    color: var(--appearance-light, #f8f1e8);
+}
+body.app-started.inverse-bars #leftContainer #topBar .control-button {
+    background: var(--appearance-light, #f8f1e8);
+    color: var(--appearance-bar, #882d17);
+    border: 1px solid var(--appearance-light, #f8f1e8);
+    box-shadow: none;
+    transform: none;
+}
+body.app-started.inverse-bars #leftContainer #topBar .stop-button {
+    background: transparent;
+    color: var(--appearance-light, #f8f1e8);
+    border-color: rgba(248, 241, 232, 0.65);
+}
+body.app-started.inverse-bars #leftContainer #topBar .control-button:hover {
+    background: #fffaf4;
+    color: var(--appearance-bar, #882d17);
+    box-shadow: none;
+    transform: none;
+}
+body.app-started.inverse-bars #leftContainer #topBar .stop-button:hover {
+    background: #f6d9cc;
+    color: #882d17;
+}
+body.app-started.inverse-bars #leftContainer #topBar .control-button.paused {
+    background: #f1c3a4 !important;
+    color: var(--appearance-bar, #882d17);
+    border-color: #f1c3a4;
+    box-shadow: none;
+}
+body.app-started.inverse-bars #leftContainer :is(#topBar, #ActionBar) button:focus-visible {
+    outline: 2px solid var(--appearance-light, #f8f1e8);
+    outline-offset: 2px;
+}
+
+/* Stop retains its red safety cue in either appearance. */
+body.app-started #leftContainer #topBar #stopButton,
+body.app-started.inverse-bars #leftContainer #topBar #stopButton {
+    background: #d8281f !important;
+    color: #fff;
+    border-color: #a81c16;
+    box-shadow: none;
+}
+body.app-started #leftContainer #topBar #stopButton:hover {
+    background: #e63a30 !important;
+}
+.appearance-radius { display: flex; align-items: center; gap: 12px; }
+#notchRadius { flex: 1; min-width: 100px; height: 44px; accent-color: var(--terracotta-dark); }
+#notchRadiusValue { min-width: 44px; font-variant-numeric: tabular-nums; }
+#inverseBarsToggle { min-height: 44px; }
+
+/* Standalone appearance laboratory stays above splash screens and dialogs. */
+#appearanceTool { position: fixed; bottom: 76px; left: 14px; z-index: 2147483000; color: #f8f1e8; font-size: 13px; pointer-events: auto; }
+#appearanceTool[data-side="right"] { left: auto; right: 80px; }
+#appearanceTool button, #appearanceTool select { min-height: 44px; border: 1px solid #ffffff40; border-radius: 8px; padding: 8px 12px; color: #f8f1e8; background: #ffffff12; cursor: pointer; }
+#appearanceLauncher { background: #422b25d9 !important; backdrop-filter: blur(12px); box-shadow: 0 3px 14px #0002; }
+#appearancePanel { position: absolute; bottom: 52px; left: 0; width: min(310px, calc(100vw - 32px)); max-height: calc(100dvh - 154px); overflow-y: auto; box-sizing: border-box; padding: 14px; border: 1px solid #ffffff40; border-radius: 16px; background: rgb(45 34 29 / var(--appearance-opacity, .88)); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 12px 40px #0004; }
+#appearanceTool[data-side="right"] #appearancePanel { right: 0; left: auto; }
+#appearancePanel[hidden] { display: none; }
+#appearancePanel header, #appearancePanel footer, .appearance-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#appearancePanel p { color: #dfd0c5; margin: 4px 0 14px; font-size: 12px; }
+#appearancePanel header strong { font-size: 17px; }
+#appearancePanel header button { font-size: 22px; }
+#appearancePanel .appearance-row { min-height: 48px; }
+#appearancePanel input[type="checkbox"] { width: 24px; height: 24px; margin: 10px; accent-color: #dba489; }
+#appearancePanel input[type="color"] { width: 52px; height: 44px; padding: 4px; background: transparent; border: 1px solid #ffffff40; border-radius: 8px; cursor: pointer; }
+#appearancePanel .appearance-range { display: grid; grid-template-columns: 1fr auto; align-items: center; }
+#appearancePanel input[type="range"] { grid-column: 1 / -1; width: 100%; height: 30px; margin: 0 0 8px; accent-color: #dba489; }
+#appearancePanel output { color: #efc6ae; font-variant-numeric: tabular-nums; }
+#appearancePanel footer { margin-top: 12px; font-size: 12px; }
+#appearancePanel select option { background: #2d221d; }
+#appearanceTool :focus-visible { outline: 2px solid #f6c4a6; outline-offset: 2px; }
+body.app-started #leftContainer > :is(#topBar, #ActionBar) button { border-radius: var(--appearance-button-radius, 6px); }
+body.app-started:not(.inverse-bars) #leftContainer > :is(#topBar, #ActionBar) { background: var(--appearance-light, #f8f1e8); }
+body.app-started:not(.inverse-bars) #leftContainer :is(#topBar .setting-button, #ActionBar button) { color: var(--appearance-bar, #882d17); }
+@media (max-width: 480px) { #appearanceTool[data-side="right"] { right: 14px; } }
+
+/* Flat, clear typography in the working app; retain the home-screen treatment. */
+body.app-started {
+    --carve-text: none;
+    --carve-surface-text: none;
+}
+body.app-started,
+body.app-started *,
+body.app-started *::before,
+body.app-started *::after {
+    text-shadow: none !important;
+}
+
+/* Log typography follows User Preferences for both status and history. */
+body.app-started.text-size-small #PrinterLog { font-size: inherit; }
+body.app-started.text-size-medium #PrinterLog { font-size: inherit; }
+body.app-started.text-size-large #PrinterLog { font-size: inherit; }
+body.app-started #PrinterLog .printer-log-content { font-size: inherit; }
+/* Original terracotta interaction cues for the curve toolbar. */
+body.app-started #leftContainer #ActionBar button:hover {
+    background: rgba(207, 73, 40, 0.10) !important;
+    color: var(--terracotta-dark);
+}
+body.app-started #leftContainer #ActionBar button:active {
+    background: rgba(207, 73, 40, 0.18) !important;
+}
+body.app-started #leftContainer #ActionBar button:is(.active, [aria-pressed="true"]) {
+    background: var(--terracotta) !important;
+    color: #f8f1e8;
+    border-color: var(--terracotta-dark);
+}
+body.app-started #leftContainer #ActionBar button:is(.active, [aria-pressed="true"]):hover {
+    background: var(--terracotta-hover) !important;
+    color: #f8f1e8;
+}
+body.app-started.inverse-bars #leftContainer #ActionBar button:hover {
+    color: var(--appearance-light, #f8f1e8);
+}
+
+/* Scale the curve toolbar with the user's text-size preference. */
+body.text-size-small #ActionBar {
+    --ab-btn: 44px; --ab-icon: 20px; --ab-space: 4px; --ab-label: 12px;
+}
+body.text-size-medium #ActionBar {
+    --ab-btn: 48px; --ab-icon: 24px; --ab-space: 6px; --ab-label: 14px;
+}
+body.text-size-large #ActionBar {
+    --ab-btn: 56px; --ab-icon: 28px; --ab-space: 8px; --ab-label: 16px;
+}
+body.app-started #leftContainer > #ActionBar {
+    padding: var(--ab-space, 6px);
+    gap: var(--ab-space, 6px);
+}
+body.app-started #leftContainer #ActionBar button {
+    flex-basis: var(--ab-btn, 48px);
+    width: var(--ab-btn, 48px);
+    height: var(--ab-btn, 48px);
+    min-width: 44px;
+    min-height: 44px;
+}
+body.app-started #leftContainer #ActionBar button svg {
+    width: var(--ab-icon, 24px);
+    height: var(--ab-icon, 24px);
+}
+body.app-started #leftContainer #ActionBar .action-section { gap: calc(var(--ab-space, 6px) / 2); }
+body.app-started #leftContainer #ActionBar .action-separator { height: var(--ab-icon, 24px); }
+body.app-started #leftContainer #ActionBar button[data-tip]::after { font-size: var(--ab-label, 14px); }
+
+/* Shared 6px baseline, adjustable through the Appearance tool. */
+body.app-started button,
+#appearanceTool button {
+    border-radius: var(--appearance-button-radius, 6px) !important;
+}
+body.app-started .setting-popup {
+    border-radius: 0 0 var(--appearance-button-radius, 6px) var(--appearance-button-radius, 6px);
+}
+/* The expanded slider joins its trigger at a sharp right-hand corner. */
+body.app-started #leftContainer #topBar .setting-button.active {
+    border-bottom-right-radius: 0 !important;
+}
+/* Dark surfaces preserve original brand, control, and rendered material colors. */
+html.dark-mode:has(body.app-started) {
+    background: #191716;
+    --paper: #292522 !important;
+    --paper-2: #24211f !important;
+    --paper-3: #37312c !important;
+    --surface-editor: #1e1b19 !important;
+    --surface-canvas: #211e1b !important;
+    --fm-glass: #292522ed !important;
+    --fm-glass-strong: #292522f5 !important;
+    --fm-hairline: #51443a;
+    --hairline: #51443a;
+}
+html.dark-mode:has(body.app-started) body { background: #191716; }
+/* The home screen always keeps its light palette. */
+html.dark-mode:has(body.app-started) body.app-started:not(.inverse-bars) #leftContainer > :is(#topBar, #ActionBar) {
+    background: var(--paper);
+}
+html.dark-mode:has(body.app-started) :is(.config-change-modal, .session-stopped-modal) { background: var(--paper); }
+
+/* Authored layer marks sit on the slider track. */
+body.app-started #LayerSlider .ls-track > .ls-ticks {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    overflow: visible;
+}
+body.app-started .ls-ticks line {
+    stroke: var(--ink);
+    stroke-width: 3px;
+    stroke-linecap: round;
+}
+html.dark-mode:has(body.app-started) body.app-started .ls-ticks line { stroke: #f4e6d5; }
+/* Fill the actual window; keep the bottom notch attached at every viewport size. */
+body.app-started #viewport { position: fixed; inset: 0; height: auto; }
+body.app-started #mainContent { align-items: stretch; }
+body.app-started #leftContainer > #ActionBar { margin-top: auto; margin-bottom: 0; }
+
+/* Warm light interface ink, separate from the unchanged clay/render palettes. */
+html.dark-mode:has(body.app-started) body {
+    --ink: #f2e4d5;
+    --ink-72: #e1cbb7;
+    --ink-55: #c3ac97;
+    --tool-ink: #f2e4d5;
+}
+html.dark-mode:has(body.app-started) body.app-started #leftContainer #topBar .setting-button,
+html.dark-mode:has(body.app-started) body.app-started #leftContainer #topBar #menuButton,
+html.dark-mode:has(body.app-started) body.app-started #leftContainer #ActionBar button:not(.active),
+html.dark-mode:has(body.app-started) body.app-started #PrinterLog,
+html.dark-mode:has(body.app-started) body.app-started #PrinterLog button,
+html.dark-mode:has(body.app-started) body.app-started #PrinterLog .printer-log-content,
+html.dark-mode:has(body.app-started) body.app-started #dropdownMenu,
+html.dark-mode:has(body.app-started) body.app-started #dropdownMenu button,
+html.dark-mode:has(body.app-started) body.app-started .setting-popup,
+html.dark-mode:has(body.app-started) body.app-started .setting-popup-value,
+html.dark-mode:has(body.app-started) body.app-started #SliderContainer { color: #f2e4d5; }
+html.dark-mode:has(body.app-started) body.app-started #leftContainer #topBar #menuButton span { background: #f2e4d5; }
+html.dark-mode:has(body.app-started) body.app-started #viewControlsDock :is(button, #planeToggleButton, #homingButton, #lockButton, #heatmapToggleButton):not(.active):not([aria-pressed="true"]):not([aria-checked="true"]) {
+    color: #f2e4d5;
+}
+html.dark-mode:has(body.app-started) body.app-started #leftContainer #topBar .setting-button.active { background: #4b382e !important; color: #f2e4d5; }
+
+/* Play and Pause share the transport button's theme-aware icon color. */
+body.app-started #leftContainer #topBar #pauseButton svg :is(polygon, rect) { fill: currentColor; }
+
+/* Bleed the bottom notch past fractional viewport pixels so no canvas hairline shows. */
+body.app-started #leftContainer > #ActionBar::before {
+    content: '';
+    position: absolute;
+    left: -1px;
+    right: -1px;
+    bottom: -2px;
+    height: 3px;
+    background: inherit;
+    border-radius: 0;
+    pointer-events: none;
+}
+/* Layer step tab joins the upper-left edge of the slider frame. */
+body.app-started #SliderContainer { opacity: 1; }
+body.app-started .layer-step-controls {
+    position: absolute;
+    right: 100%;
+    top: -1px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 10px 12px;
+    background: var(--fm-glass-strong);
+    color: var(--ink);
+    border: 1px solid var(--fm-hairline);
+    border-right: 0;
+    border-radius: var(--notch-radius, 6px) 0 0 var(--notch-radius, 6px);
+}
+body.app-started .layer-step-controls::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 100%;
+    width: var(--notch-radius, 6px);
+    height: var(--notch-radius, 6px);
+    background: radial-gradient(circle at 0 100%, transparent calc(var(--notch-radius, 6px) - .5px), var(--fm-glass-strong) var(--notch-radius, 6px));
+    pointer-events: none;
+}
+body.app-started .layer-step-label { font-weight: 600; }
+body.app-started .layer-step-controls button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 1px solid transparent;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+body.app-started .layer-step-controls button svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+body.app-started .layer-step-controls button:hover:not(:disabled) { background: rgba(207,73,40,.1); }
+body.app-started .layer-step-controls button:active:not(:disabled) { background: rgba(207,73,40,.18); }
+body.app-started .layer-step-controls button:disabled { opacity: .35; cursor: default; }
+body.app-started .layer-step-controls button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+body.app-started.text-size-small #SliderContainer { --layer-label-size: 12px; }
+body.app-started.text-size-medium #SliderContainer { --layer-label-size: 14px; }
+body.app-started.text-size-large #SliderContainer { --layer-label-size: 16px; }
+body.app-started #SliderContainer #parameters,
+body.app-started #SliderContainer .layer-step-label,
+body.app-started #SliderContainer .ls-readout .ls-cur,
+body.app-started #SliderContainer .ls-readout .ls-tot { font-size: var(--layer-label-size, 14px); }
+/* One continuous slider/tab silhouette, with no overlapping translucent seams. */
+body.app-started #SliderContainer {
+    --slider-surface: var(--paper, #f8f1e8);
+    background: var(--slider-surface);
+    border: 0;
+    border-top-left-radius: 0;
+    box-shadow: none;
+    filter: drop-shadow(0 3px 5px rgba(60, 30, 18, .18));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+body.app-started #SliderContainer .layer-step-controls {
+    top: 0;
+    right: calc(100% - 1px);
+    background: var(--slider-surface);
+    border: 0;
+    box-shadow: none;
+}
+body.app-started #SliderContainer .layer-step-controls::after {
+    background: radial-gradient(circle at 0 100%, transparent calc(var(--notch-radius, 6px) - .5px), var(--slider-surface) var(--notch-radius, 6px));
+}
+/* Reserve the readout space; digit changes never resize or shift the track. */
+body.app-started #SliderContainer #parameters {
+    width: max-content;
+    min-width: 0;
+    align-self: flex-end;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+/* Preserve the original narrow channel; the count cannot widen its frame. */
+body.app-started #SliderContainer { width: 54px; box-sizing: border-box; padding-inline: 5px; }
+body.app-started #SliderContainer #LayerSlider { width: 34px; }
+body.app-started #SliderContainer .ls-track { box-sizing: border-box; }
+/* Both control tabs grow from the narrow slider frame. */
+body.app-started #SliderContainer .layer-step-controls {
+    font-size: var(--layer-label-size, 14px);
+    padding-right: calc(10px + 2ch);
+}
+body.app-started #SliderContainer { border-bottom-left-radius: 0; }
+body.app-started #SliderContainer #viewControlsDock {
+    right: calc(100% - 1px);
+    bottom: 0;
+    width: max-content;
+    max-width: none;
+    flex-wrap: nowrap;
+    background: var(--slider-surface);
+    border: 0;
+    border-radius: var(--notch-radius, 6px) 0 0 var(--notch-radius, 6px);
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+body.app-started #SliderContainer #viewControlsDock::before {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: 100%;
+    width: var(--notch-radius, 6px);
+    height: var(--notch-radius, 6px);
+    background: radial-gradient(circle at 0 0, transparent calc(var(--notch-radius, 6px) - .5px), var(--slider-surface) var(--notch-radius, 6px));
+    pointer-events: none;
+}

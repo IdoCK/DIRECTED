@@ -1,0 +1,511 @@
+/* ============================================================
+   DIRECTƎD splash — "SLIPWARE" landing system.
+   Editorial warm-paper ground, dark-terracotta ink wordmark.
+   Loaded AFTER styles.css so these rules win. Selectors are
+   scoped to splash-only elements; JS hooks (#modeSlider,
+   .demo-active, #slideButton, #slideFill, .sliding,
+   body.splash-idle, #loader.gone) are unchanged.
+   ============================================================ */
+:root{
+  /* Slipware paper grounds */
+  --paper:#F8F1E8;            /* primary ground */
+  --paper-2:#F4ECE2;          /* panel / raised */
+  --paper-3:#ECE0D1;          /* recessed track */
+  /* Ink + accent */
+  --ink:#7A2812;              /* dark terracotta — wordmark + primary text */
+  --ink-2:#882D17;            /* secondary ink / hover */
+  --accent:#CF4928;           /* live / progress only */
+  --accent-soft:#D97A5C;      /* accent tint */
+  --green:#3C5A4B;            /* optional secondary */
+  /* Lines + texture */
+  --hairline:#E7DDD0;
+  --ink-12:rgba(122,40,18,.12);
+  --ink-20:rgba(122,40,18,.20);
+  --ink-55:rgba(122,40,18,.55);
+  --ink-72:rgba(122,40,18,.72);
+  /* Back-compat alias (other stylesheets reference --off-white) */
+  --off-white:#f4ece2;
+  /* Motion (unchanged timings) */
+  --m-fast:220ms; --m-base:420ms; --m-slow:900ms; --m-brush:1000ms;
+  --e-out:cubic-bezier(0.22,1,0.36,1);
+  --e-emphasized:cubic-bezier(0.2,0,0,1);
+  --e-brush:cubic-bezier(0.16,0.84,0.24,1);
+  /* Light-theme elevation: emboss/contact, NOT drop-glow */
+  --knob-shadow:0 1px 2px rgba(122,40,18,.18), 0 4px 12px rgba(122,40,18,.10);
+  --knob-edge:inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 2px rgba(122,40,18,.06);
+  /* ===== "Carved into paper" — terracotta reads as cut INTO the cream surface,
+     not raised on top of it. Dark along the top inner wall of the cut, light on
+     the lower lip. These are the single tuning point — raise the alphas to cut
+     deeper, lower them to make it shallower. "very very subtle" by default. */
+  /* carve depth baked at 1.80 (chosen via the temporary tuner). Dark-shadow alphas = base × 1.8. */
+  --carve-text:0 1px 0 rgba(255,253,250,.85), 0 -1px 1px rgba(60,18,8,.61);      /* engraved terracotta text */
+  --carve-img:drop-shadow(0 1px 0 rgba(255,253,250,.92)) drop-shadow(0 -1.4px 1px rgba(60,18,8,.58));        /* engraved SVG mark (rest) */
+  --carve-img-deep:drop-shadow(0 1px 0 rgba(255,253,250,.97)) drop-shadow(0 -2px 1.4px rgba(60,18,8,.76));   /* engraved SVG mark (hover, deeper) */
+  --carve-frame:inset 0 2px 3px rgba(60,18,8,.79), inset 0 -1px 1px rgba(255,253,250,.12);                  /* recessed terracotta button frame */
+  --carve-frame-deep:inset 0 3px 4px rgba(60,18,8,1), inset 0 -1px 1px rgba(255,253,250,.10);               /* deeper cut on hover/press */
+  --carve-rim:0 1px 0 rgba(255,253,250,.6);           /* lit paper lip around the cutout (outer) */
+  --carve-surface-text:0 1px 1.5px rgba(50,15,8,.83);  /* cream label sitting at surface, casting into the recess */
+  --knob-float:0 2px 3px rgba(60,18,8,.34), 0 7px 16px rgba(60,18,8,.22);  /* knob/puck hovering ABOVE the recessed terracotta channel */
+  /* Type — display serif falls back to system serif (Fraunces can be bundled
+     locally later under ./fonts/; we avoid a remote link for the offline appliance). */
+  --font-display:ui-serif,Georgia,"Times New Roman",serif;
+  --font-ui:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Inter,system-ui,sans-serif;
+}
+
+/* ===== paper ground + bottom terracotta bleed ===== */
+.standby-screen{
+  background:
+    radial-gradient(140% 60% at 50% 118%,
+      rgba(207,73,40,.16) 0%,
+      rgba(136,45,23,.07) 34%,
+      rgba(136,45,23,0) 62%),
+    radial-gradient(120% 80% at 50% -10%,
+      #FBF5EE 0%, rgba(251,245,238,0) 55%),
+    linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%)
+      !important;
+  color:var(--ink);
+  isolation:isolate;
+  /* NOTE: keep the base `position:fixed; inset:0; display:flex` from styles.css —
+     do NOT override position here, or the full-screen overlay + centering break. */
+}
+/* procedural paper grain — no image asset. z-index:-1 keeps it above the paper
+   background but behind all splash content, so no element needs repositioning. */
+.standby-screen::before{
+  content:"";
+  position:absolute; inset:0; z-index:-1; pointer-events:none;
+  opacity:.5; mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.48  0 0 0 0 0.16  0 0 0 0 0.07  0 0 0 0.025 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ===== Demo / Printer mode toggle (top-right) ===== */
+.mode-toggle-container{ top:30px; right:32px; }
+.mode-toggle-rail{ gap:18px; }
+.mode-label-left, .mode-label-right{
+  font-family:var(--font-ui);
+  font-size:12.5px; font-weight:600; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--ink-55); opacity:1;
+  text-shadow:var(--carve-text);   /* engraved into paper */
+  transition:color var(--m-fast) var(--e-out);
+}
+.mode-label-left.active, .mode-label-right.active{ color:var(--ink); }
+.rail-track{
+  width:112px; height:32px; border-radius:999px;
+  /* terracotta channel carved into the paper */
+  background:var(--ink);
+  border:1px solid var(--ink);
+  box-shadow:var(--carve-frame), var(--carve-rim);
+}
+.rail-slider{
+  top:3px; bottom:3px; right:3px; left:auto; width:53px; height:auto;
+  border-radius:999px;
+  background:linear-gradient(180deg,#FFFDFA,var(--paper-2));
+  border:1px solid var(--hairline);
+  box-shadow:var(--knob-float), var(--knob-edge);
+  transition:left var(--m-base) var(--e-emphasized), right var(--m-base) var(--e-emphasized);
+}
+.rail-slider.demo-active{ right:auto; left:3px; }
+
+/* ===== centered lockup (brush behind the wordmark) ===== */
+.standby-content{ display:flex; flex-direction:column; align-items:center; }
+.logo-container{
+  position:relative; display:flex; align-items:center; justify-content:center;
+  width:auto; margin:0 0 104px; overflow:visible;
+}
+.brush{
+  position:absolute; left:50%; top:54%;
+  width:min(104vw,1120px);
+  transform:translate(-50%,-50%) rotate(-3deg);
+  pointer-events:none; z-index:0;
+  opacity:.30;                 /* soft wash, not a slab */
+  mix-blend-mode:multiply;     /* darken paper instead of screen-lighten */
+}
+.brush svg{ width:100%; height:auto; display:block; filter:blur(0.5px); }
+.brush .rail-mask{
+  fill:none; stroke:#fff; stroke-width:108;
+  stroke-linecap:butt; stroke-linejoin:round;
+}
+.logo-title{
+  width:min(72vw,620px); height:auto; display:block;
+  /* reset the absolute top:40%/left:50% from styles.css so the flex lockup centers it */
+  position:relative; top:auto; left:auto; z-index:1;
+  /* cream SVG (#FDFBF4) -> dark terracotta #7A2812 (filter chain; fill can't reach an <img>).
+     brightness(0) collapses to black, then sepia/saturate/hue-rotate/brightness re-tint;
+     the carve shadows engrave the wordmark INTO the paper (lit lower lip + dark top wall). */
+  filter:
+    brightness(0) saturate(100%)
+    invert(17%) sepia(56%) saturate(2200%)
+    hue-rotate(346deg) brightness(94%) contrast(96%)
+    var(--carve-img);
+  opacity:0; transform:translateY(12px) scale(.99);
+  transition:opacity var(--m-slow) var(--e-out), transform var(--m-slow) var(--e-out);
+}
+body.splash-idle .logo-title{ opacity:1; transform:none; }
+
+/* ===== refined slide-to-start (paper, ink-on-paper label) ===== */
+.slide-to-start-container{ width:min(86vw,440px); margin:0 auto; }
+.slide-track{
+  height:72px; border-radius:999px; overflow:hidden; top:auto;
+  /* terracotta channel carved into the paper */
+  background:var(--ink);
+  border:1px solid var(--ink);
+  box-shadow:var(--carve-frame), var(--carve-rim);
+  -webkit-backdrop-filter:none; backdrop-filter:none;
+}
+.slide-fill{ display:none; }   /* terracotta in-fill removed — the puck now masks the label as it sweeps */
+.slide-label{
+  position:absolute; inset:0; z-index:2;
+  display:flex; align-items:center; justify-content:center;
+  text-align:center; text-indent:.22em;
+  font-family:var(--font-ui);
+  font-size:12.5px; letter-spacing:.22em; text-transform:uppercase;
+  color:rgba(248,241,232,.92); font-weight:600;   /* cream — reads on the terracotta channel */
+  pointer-events:none; user-select:none; will-change:opacity;
+  text-shadow:var(--carve-surface-text);   /* cream label engraved into the terracotta channel */
+}
+.slide-button{
+  left:5px; top:50%; margin-top:-32px; width:62px; height:62px; z-index:4; /* -32 = half of 62 content + 2×1px border (content-box) */
+  border-radius:999px;
+  background:linear-gradient(180deg,#FFFDFA,var(--paper-2));
+  border:1px solid var(--hairline);
+  box-shadow:var(--knob-float), var(--knob-edge);
+  color:var(--ink);
+}
+
+/* ===== printer config button (bottom-right) — sharp corners ===== */
+.printer-config-btn.splash-config-btn{
+  /* A quiet paper control in the SAME family as the mode toggle + slide track:
+     paper surface, hairline edge, engraved terracotta label in the mode-label
+     type. It's secondary chrome — it must not out-weigh "Slide to start".
+     Right-aligned to the mode toggle's gutter (right:32px) so the top-right and
+     bottom-right chrome share one vertical line. */
+  position:absolute; isolation:isolate;     /* keep base bottom-right anchoring; ::before frame scales independently */
+  top:auto; left:auto; bottom:30px; right:32px;
+  width:auto; height:38px; min-height:0; padding:0 15px 0 13px; border-radius:4px;
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  background:transparent; border:0; box-shadow:none;
+  color:var(--paper);
+  font-family:var(--font-ui); font-size:11px; font-weight:600; letter-spacing:.12em; text-transform:uppercase;
+  text-shadow:var(--carve-surface-text);                      /* cream label at surface — stays put on hover */
+}
+/* the recessed terracotta frame — the ONLY thing that enlarges on hover */
+.printer-config-btn.splash-config-btn::before{
+  content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit;
+  background:var(--ink);
+  border:1px solid var(--ink);
+  box-shadow:var(--carve-frame), var(--carve-rim);
+  transform-origin:center;
+  transition:transform var(--m-base) var(--e-out);            /* smooth grow */
+}
+.printer-config-btn.splash-config-btn .config-gear{
+  width:16px; height:16px; flex:0 0 auto; display:block; color:var(--paper);
+  filter:drop-shadow(0 1px 1px rgba(50,15,8,.4));            /* cream icon at surface, casting into the recess */
+}
+.printer-config-btn.splash-config-btn:hover::before{ transform:scale(1.06); }                          /* frame grows, content unchanged */
+.printer-config-btn.splash-config-btn:active::before{ transform:scale(.96); transition:transform 110ms var(--e-out); }  /* fast retract */
+.printer-config-btn.splash-config-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+/* ===== persistent logo mark — engraved into paper =====
+   Scoped to the splash (body:not(.app-started)) so the in-app logo, which
+   resets to invert(0), is never recoloured by these carve filters. */
+.logo-small-persistent{
+  transition:
+    filter var(--m-fast) var(--e-out),
+    top    var(--m-base) var(--e-out),
+    transform var(--m-base) var(--e-out);   /* smooth enlargement */
+}
+/* resting carved mark (splash only; in-app body.app-started rule still wins) */
+body:not(.app-started) .logo-small-persistent{
+  filter:
+    brightness(0) saturate(100%)
+    invert(17%) sepia(56%) saturate(2200%)
+    hue-rotate(346deg) brightness(94%) contrast(96%)
+    var(--carve-img);
+}
+/* interaction = scale only (carve stays static): smooth grow, fast retract */
+body:not(.app-started) .logo-small-persistent:hover{ transform:scale(1.06); }
+body:not(.app-started) .logo-small-persistent:active{ transform:scale(.96); transition:transform 110ms var(--e-out); }
+body:not(.app-started) .logo-small-persistent:focus-visible{
+  outline:2px solid var(--accent); outline-offset:3px; border-radius:6px;
+}
+
+/* ===== boot loader (paper, ink glyph, accent bar) ===== */
+#loader{
+  position:fixed; inset:0; z-index:10000;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 40%, #FBF5EE 0%, var(--paper) 60%, var(--paper-2) 100%);
+  gap:22px;
+  transition:opacity var(--m-slow) var(--e-out), visibility var(--m-slow);
+}
+#loader.gone{ opacity:0; visibility:hidden; pointer-events:none; }
+.loader-mark{
+  width:auto; height:138px; opacity:.95;
+  filter:drop-shadow(0 1px 0 rgba(255,255,255,.7));
+  animation:loaderPulse 1700ms var(--e-out) infinite;
+}
+@keyframes loaderPulse{ 0%,100%{ opacity:.5; transform:scale(.96);} 50%{ opacity:1; transform:scale(1.02);} }
+.loader-bar{ width:148px; height:3px; border-radius:999px; background:var(--ink-12); overflow:hidden; }
+.loader-bar::before{ content:""; display:block; height:100%; width:40%; border-radius:999px; background:var(--accent); animation:loaderSlide 1200ms var(--e-out) infinite; }
+@keyframes loaderSlide{ 0%{ transform:translateX(-110%);} 100%{ transform:translateX(370%);} }
+
+/* ===== printer-config modal — Slipware paper panel ===== */
+.printer-config-modal{
+  background:rgba(122,40,18,.18);            /* warm scrim, not black */
+  -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px);
+  transition:opacity var(--m-base) var(--e-out), visibility 0s var(--m-base);
+}
+.printer-config-modal.active{
+  transition:opacity var(--m-base) var(--e-out), visibility 0s;
+}
+.printer-config-content{
+  background:var(--paper);
+  border:1px solid var(--hairline);
+  border-radius:4px;                         /* sharp chrome, matches config btn */
+  padding:24px 28px 28px;                    /* on the 4/8 spacing scale */
+  max-width:380px; width:90%;
+  color:var(--ink);
+  /* contact-emboss elevation: warm soft contact + inner white shoulder, NOT a black glow */
+  box-shadow:
+    0 1px 2px rgba(122,40,18,.18),
+    0 18px 48px rgba(122,40,18,.14),
+    inset 0 1px 0 rgba(255,255,255,.9),
+    inset 0 -1px 2px rgba(122,40,18,.06);
+  /* grow from the bottom-right Config trigger */
+  transform-origin:bottom right;
+  opacity:0; transform:translateY(10px) scale(.96);
+  transition:opacity var(--m-base) var(--e-out),
+             transform var(--m-base) var(--e-emphasized);
+}
+.printer-config-modal.active .printer-config-content{
+  opacity:1; transform:translateY(0) scale(1);
+}
+/* exit — faster than enter (system responding, not deciding) */
+.printer-config-modal.closing{ opacity:0; transition:opacity var(--m-fast) var(--e-out); }
+.printer-config-modal.closing .printer-config-content{
+  opacity:0; transform:translateY(6px) scale(.97);
+  transition:opacity var(--m-fast) var(--e-out), transform var(--m-fast) var(--e-out);
+}
+
+/* header: title + close share a baseline */
+.config-header{
+  display:flex; align-items:baseline; justify-content:space-between; gap:16px;
+  margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid var(--hairline);
+}
+.printer-config-content h2{
+  margin:0;
+  font-family:var(--font-display) !important;   /* beat the global `* { ... !important }` */
+  color:var(--ink); font-weight:560; font-size:21px; letter-spacing:.005em; line-height:1.1;
+  text-shadow:var(--carve-text);   /* engraved into the panel */
+}
+.config-close{
+  flex:0 0 auto; width:28px; height:28px; padding:0;
+  display:inline-flex; align-items:center; justify-content:center;
+  background:transparent; border:1px solid transparent; border-radius:4px;
+  color:var(--ink-55); font-family:var(--font-ui); font-size:15px; line-height:1; cursor:pointer;
+  transition:color var(--m-fast) var(--e-out), background var(--m-fast) var(--e-out);
+}
+.config-close:hover{ color:var(--ink); background:var(--paper-3); }
+.config-close:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+/* form rhythm — base/4 spacing */
+.printer-config-form{ display:flex; flex-direction:column; gap:16px; }
+.config-field{ display:flex; flex-direction:column; gap:6px; }
+.printer-config-content label{
+  color:var(--ink-72); font-family:var(--font-ui);
+  font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+}
+.printer-config-content input{
+  height:40px; padding:0 12px;
+  background:var(--paper-2); color:var(--ink);
+  border:1px solid var(--hairline); border-radius:4px;
+  font-family:var(--font-ui); font-size:14px;
+  box-shadow:inset 0 1px 2px rgba(122,40,18,.10);   /* sits into the paper */
+  transition:border-color var(--m-fast) var(--e-out), box-shadow var(--m-fast) var(--e-out);
+}
+.printer-config-content input:focus{
+  outline:none; border-color:var(--accent);
+  box-shadow:inset 0 1px 2px rgba(122,40,18,.06), 0 0 0 3px rgba(207,73,40,.16);
+}
+.printer-config-content input:disabled{
+  color:var(--ink-55); background:var(--paper-3); box-shadow:none; cursor:not-allowed;
+}
+.config-validation-message{ color:var(--accent); font-family:var(--font-ui); font-size:12px; }
+
+/* button pair — primary = ink letterpress chip (matches config btn); secondary = hairline ghost */
+.config-buttons{ display:flex; gap:10px; margin-top:24px; }
+.config-button{
+  flex:1; height:44px; padding:0 18px;
+  display:inline-flex; align-items:center; justify-content:center;
+  border-radius:4px; cursor:pointer;
+  font-family:var(--font-ui); font-size:13px; font-weight:600; letter-spacing:.06em;
+  position:relative; isolation:isolate;   /* frame on ::before so only IT scales, not the label */
+  background:transparent; border:0;
+}
+/* the frame — the ONLY thing that enlarges on hover (gentler than the small config chip) */
+.config-button::before{
+  content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit;
+  border:1px solid var(--hairline);
+  transform-origin:center;
+  transition:transform var(--m-base) var(--e-out);
+}
+/* PRIMARY (terracotta) = cut into the panel; cream label is the surface layer */
+.config-button.save{ color:var(--paper); text-shadow:var(--carve-surface-text); }
+.config-button.save::before{ background:var(--ink); border-color:var(--ink); box-shadow:var(--carve-frame), var(--carve-rim); }
+/* SECONDARY (paper ghost) */
+.config-button.cancel{ color:var(--ink); }
+.config-button.cancel::before{ background:var(--paper); border-color:var(--hairline); box-shadow:inset 0 1px 0 rgba(255,255,255,.7); }
+.config-button:hover::before{ transform:scale(1.04); }
+.config-button:active::before{ transform:scale(.965); transition:transform 110ms var(--e-out); }
+.config-button:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+/* =====================================================================
+   SHARED SLIPWARE MODAL THEME — extends the splash's paper + carve
+   language to the app's dialog modals (completion, stop-confirmation,
+   user-preferences, dark-mode, thanks). Loaded after styles.css so it
+   wins. Appearance + button overrides only — no layout/position changes.
+   ===================================================================== */
+
+/* --- overlays: warm scrim + soft blur --- */
+.completion-overlay, .stop-confirmation-overlay,
+.user-preferences-modal, .dark-mode-modal, .thanks-modal{
+  background:rgba(122,40,18,.18);
+  -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px);
+}
+
+/* --- panels: a raised sheet of Slipware paper --- */
+.completion-modal, .stop-confirmation-modal,
+.user-preferences-content, .dark-mode-content, .thanks-content{
+  background:var(--paper);
+  border:1px solid var(--hairline);
+  border-radius:4px;
+  color:var(--ink);
+  -webkit-backdrop-filter:none; backdrop-filter:none;
+  box-shadow:
+    0 1px 2px rgba(122,40,18,.18),
+    0 18px 48px rgba(122,40,18,.14),
+    inset 0 1px 0 rgba(255,255,255,.9),
+    inset 0 -1px 2px rgba(122,40,18,.06);
+}
+
+/* --- headings: serif display, engraved into the paper --- */
+.completion-modal h2, .stop-confirmation-modal h3,
+.user-preferences-content h2, .user-preferences-content h3,
+.dark-mode-content h2, .thanks-content h2{
+  font-family:var(--font-display) !important;   /* beat the global `* { ... !important }` */
+  color:var(--ink) !important; font-weight:560 !important;
+  text-shadow:var(--carve-text);
+}
+
+/* --- body text --- */
+.completion-modal p, .stop-confirmation-modal p,
+.dark-mode-content p, .thanks-content p, .thanks-text, .thanks-text p{
+  color:var(--ink-72) !important; font-family:var(--font-ui) !important;
+}
+
+/* --- selects / inputs inside the preferences modal --- */
+.user-preferences-content select,
+.user-preferences-content input[type="text"],
+.user-preferences-content input[type="number"]{
+  background:var(--paper-2) !important; color:var(--ink) !important;
+  border:1px solid var(--hairline) !important; border-radius:4px !important;
+  box-shadow:inset 0 1px 2px rgba(122,40,18,.10) !important;
+}
+
+/* ===== unified two-rank carved modal buttons (frame on ::before → only the frame grows) ===== */
+.completion-button, .stop-confirmation-button, .dark-mode-ok-btn,
+.thanks-ok-btn, .preference-button{
+  position:relative; isolation:isolate;
+  background:transparent !important; border:0 !important; box-shadow:none !important;
+  border-radius:4px !important;
+  font-family:var(--font-ui) !important; font-weight:600 !important; letter-spacing:.06em !important;
+  transform:none !important;        /* neutralise base :hover translateY so only ::before scales */
+  transition:none;
+}
+.completion-button::before, .stop-confirmation-button::before, .dark-mode-ok-btn::before,
+.thanks-ok-btn::before, .preference-button::before{
+  content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit;
+  border:1px solid var(--hairline);
+  transform-origin:center; transition:transform var(--m-base) var(--e-out);
+}
+/* PRIMARY (terracotta carved) */
+.completion-button, .stop-confirmation-button.yes, .dark-mode-ok-btn,
+.thanks-ok-btn, .preference-button.save{
+  color:var(--paper) !important; text-shadow:var(--carve-surface-text);
+}
+.completion-button::before, .stop-confirmation-button.yes::before, .dark-mode-ok-btn::before,
+.thanks-ok-btn::before, .preference-button.save::before{
+  background:var(--ink); border-color:var(--ink); box-shadow:var(--carve-frame), var(--carve-rim);
+}
+/* SECONDARY (paper ghost) */
+.stop-confirmation-button.no, .preference-button.cancel{ color:var(--ink) !important; }
+.stop-confirmation-button.no::before, .preference-button.cancel::before{
+  background:var(--paper); border-color:var(--hairline); box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
+}
+/* interaction: frame grows on hover, fast retract on click */
+.completion-button:hover:not(:disabled)::before, .stop-confirmation-button:hover::before,
+.dark-mode-ok-btn:hover::before, .thanks-ok-btn:hover::before, .preference-button:hover::before{
+  transform:scale(1.04);
+}
+.completion-button:active:not(:disabled)::before, .stop-confirmation-button:active::before,
+.dark-mode-ok-btn:active::before, .thanks-ok-btn:active::before, .preference-button:active::before{
+  transform:scale(.965); transition:transform 110ms var(--e-out);
+}
+/* disabled (completion "Start New Session" begins disabled) */
+.completion-button:disabled{ color:var(--ink-55) !important; cursor:not-allowed; }
+.completion-button:disabled::before{ background:var(--paper-3); border-color:var(--hairline); box-shadow:none; }
+/* focus */
+.completion-button:focus-visible, .stop-confirmation-button:focus-visible,
+.dark-mode-ok-btn:focus-visible, .thanks-ok-btn:focus-visible, .preference-button:focus-visible{
+  outline:2px solid var(--accent); outline-offset:2px;
+}
+
+/* ===== preference stateful controls (segmented text-size + toggles) ===== */
+.text-size-btn, .preference-toggle-btn{
+  position:relative; isolation:isolate;
+  background:transparent !important; border:0 !important; box-shadow:none !important;
+  border-radius:4px !important; color:var(--ink-72) !important;
+  font-family:var(--font-ui) !important; font-weight:600 !important; letter-spacing:.04em !important;
+  text-shadow:var(--carve-text); transform:none !important; transition:none;
+}
+.text-size-btn::before, .preference-toggle-btn::before{
+  content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit;
+  background:var(--paper-2); border:1px solid var(--hairline); box-shadow:var(--knob-edge);
+  transform-origin:center; transition:transform var(--m-base) var(--e-out);
+}
+.text-size-btn:hover::before, .preference-toggle-btn:hover::before{ transform:scale(1.04); }
+.text-size-btn:active::before, .preference-toggle-btn:active::before{ transform:scale(.965); transition:transform 110ms var(--e-out); }
+/* selected / active = terracotta carved */
+.text-size-btn.selected, .preference-toggle-btn.active{ color:var(--paper) !important; text-shadow:var(--carve-surface-text); }
+.text-size-btn.selected::before, .preference-toggle-btn.active::before{ background:var(--ink); border-color:var(--ink); box-shadow:var(--carve-frame); }
+.text-size-btn:focus-visible, .preference-toggle-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+@media (prefers-reduced-motion: reduce){
+  .loader-mark, .loader-bar::before{ animation:none; }
+  .logo-title{ opacity:1 !important; transform:none !important; }
+  /* buttons: keep colour/shadow cues, drop all movement */
+  .logo-small-persistent, .logo-small-persistent:hover, .logo-small-persistent:active,
+  .printer-config-btn.splash-config-btn, .printer-config-btn.splash-config-btn:hover,
+  .printer-config-btn.splash-config-btn:active,
+  .config-button, .config-button:hover, .config-button:active{
+    transform:none !important;
+  }
+  /* all carved button frames live on ::before — freeze their scale too */
+  .printer-config-btn.splash-config-btn::before, .printer-config-btn.splash-config-btn:hover::before, .printer-config-btn.splash-config-btn:active::before,
+  .config-button::before, .config-button:hover::before, .config-button:active::before,
+  .completion-button::before, .completion-button:hover::before, .completion-button:active::before,
+  .stop-confirmation-button::before, .stop-confirmation-button:hover::before, .stop-confirmation-button:active::before,
+  .dark-mode-ok-btn::before, .dark-mode-ok-btn:hover::before, .dark-mode-ok-btn:active::before,
+  .thanks-ok-btn::before, .thanks-ok-btn:hover::before, .thanks-ok-btn:active::before,
+  .preference-button::before, .preference-button:hover::before, .preference-button:active::before,
+  .text-size-btn::before, .text-size-btn:hover::before, .text-size-btn:active::before,
+  .preference-toggle-btn::before, .preference-toggle-btn:hover::before, .preference-toggle-btn:active::before{
+    transform:none !important;
+  }
+  /* modal: cross-fade only, no slide/scale/origin growth */
+  .printer-config-content,
+  .printer-config-modal.active .printer-config-content,
+  .printer-config-modal.closing .printer-config-content{
+    transform:none !important;
+    transition:opacity var(--m-fast) var(--e-out) !important;
+  }
+  .printer-config-content input{ transition:none !important; }
+}

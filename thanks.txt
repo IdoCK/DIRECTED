@@ -1,0 +1,7 @@
+Thank you for using DIRECTƎD!
+
+This program and system was created for my final project (B.Des) in the Industrial Design department at Bezalel Academy of Arts and Design. I would like to thank **Noam Dover**, my instructor, for providing invaluable insights into the world of clay 3D printing. I also want to thank my dear friends **Yair Vogel** and **Yael Tal** for helping me design and build this program. Finally, thank you to **Claude**, the AI agent without which I could not have completed this in such a short time.
+
+For questions or feedback, please open an issue in the project repository.
+
+I hope you’re enjoying DIRECTƎD! 😊

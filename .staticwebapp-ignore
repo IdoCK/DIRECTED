@@ -1,0 +1,9 @@
+# Node modules
+node_modules/
+# Git files
+.git/
+# Bun files
+bun.lockb
+# Development files
+*.log
+.github/

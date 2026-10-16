@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>DIRECTED App</title>
+  <script>
+    // Restore the preference early; dark styles apply only after entering the app.
+    try {
+      document.documentElement.classList.toggle('dark-mode', JSON.parse(localStorage.getItem('userPreferences') || '{}').darkMode === true);
+    } catch (_) {}
+  </script>
+  <script defer src="lib/paper.min.js"></script>
+  <script defer src="lib/clipper.js"></script>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/LogoIcon.png">
+  <!-- Three.js — intentionally NOT deferred: consts.js (type=module) builds THREE materials
+       at top-level scope, and Safari/WebKit can run module scripts before preceding defer
+       classic scripts. Blocking load guarantees THREE is defined first (Phase 3 gap fix). -->
+  <script src="lib/three.min.js"></script>
+  <!-- OrbitControls -->
+  <script defer src="lib/OrbitControls.js"></script>
+  <script defer src="lib/socket.io.js"></script>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="splash-screen.css">
+</head>
+<body>
+  <div id="viewport">
+    <!-- Persistent Logo Small -->
+    <button id="logoButton" class="logo-small-persistent" title="About DIRECTƎD">
+      <img src="Logo small.svg" alt="DIRECTƎD Logo"/>
+    </button>
+    <!-- Standby/Splash Screen -->
+    <div id="standbyScreen" class="standby-screen">
+      <!-- Mode Toggle -->
+      <div class="mode-toggle-container">
+        <div class="mode-toggle-rail">
+          <span class="mode-label-left">Demo Mode</span>
+          <div class="rail-track">
+            <div class="rail-slider" id="modeSlider"></div>
+          </div>
+          <span class="mode-label-right active">Printer Mode</span>
+        </div>
+      </div>
+      <div class="standby-content">
+        <div class="logo-container">
+          <div class="brush" aria-hidden="true">
+          <svg viewBox="-12 -12 1124 332" preserveAspectRatio="xMidYMid meet" style="overflow:visible" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <linearGradient id="brushPigment" x1="40" y1="250" x2="1040" y2="40" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#C8542F"/>
+                <stop offset="0.30" stop-color="#CF4928"/>
+                <stop offset="0.62" stop-color="#D9805C"/>
+                <stop offset="0.85" stop-color="#E7C4A6"/>
+                <stop offset="1" stop-color="#ECE0D1"/>
+              </linearGradient>
+              <filter id="brushGrain" x="-5%" y="-5%" width="110%" height="110%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n" seed="7"/>
+                <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0" result="g"/>
+                <feComposite in="g" in2="SourceGraphic" operator="in" result="grain"/>
+                <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="grain"/></feMerge>
+              </filter>
+              <mask id="brushReveal" maskUnits="userSpaceOnUse" x="-260" y="-260" width="1620" height="840">
+                <rect x="-260" y="-260" width="1620" height="840" fill="#000"/>
+                <g filter="url(#brushFeather)">
+                  <path id="brushRail" class="rail-mask" d="M 554.9 102.6 C 553.2 103.6, 548.3 108, 544.4 108.8 C 540.5 109.6, 535.7 108.1, 531.4 107.6 C 527.1 107.1, 522.7 106.4, 518.4 105.8 C 514.1 105.2, 509.8 104.7, 505.5 104.1 C 501.2 103.5, 496.9 103.1, 492.6 102.4 C 488.3 101.8, 484 101, 479.7 100.2 C 475.4 99.5, 471.1 98.7, 466.8 97.9 C 462.5 97.1, 458.3 96.4, 454 95.6 C 449.7 94.8, 445.4 94, 441.1 93.2 C 436.8 92.4, 432.6 91.6, 428.3 90.8 C 424 90, 419.7 89.1, 415.4 88.4 C 411.1 87.7, 406.8 87.1, 402.5 86.6 C 398.2 86.1, 393.8 85.6, 389.5 85.1 C 385.2 84.6, 380.8 84.3, 376.5 83.9 C 372.2 83.5, 367.8 83.1, 363.5 82.5 C 359.2 81.9, 354.9 81.3, 350.7 80.3 C 346.5 79.3, 342.4 77.6, 338.2 76.4 C 334 75.2, 329.9 74, 325.6 73.2 C 321.3 72.4, 316.9 72.3, 312.6 71.4 C 308.3 70.6, 304.1 69.4, 300 68.1 C 295.9 66.8, 292 64.7, 287.8 63.5 C 283.6 62.4, 279.3 61.6, 275 61.2 C 270.7 60.8, 266.3 61.1, 261.9 60.9 C 257.5 60.7, 253.2 60.5, 248.9 60 C 244.6 59.6, 240.3 59, 236 58.2 C 231.7 57.4, 227.5 56.3, 223.2 55.3 C 219 54.3, 214.8 53, 210.5 52.4 C 206.2 51.8, 201.9 51.8, 197.5 51.7 C 193.2 51.6, 188.8 51.8, 184.4 51.8 C 180.1 51.9, 175.8 52, 171.4 52 C 167.1 52.1, 162.7 52, 158.3 52.1 C 153.9 52.2, 149.5 52.3, 145.2 52.4 C 140.9 52.5, 136.5 52.6, 132.2 52.8 C 127.9 53, 123.5 53.3, 119.1 53.6 C 114.8 53.9, 110.4 54.1, 106.1 54.4 C 101.8 54.7, 97.4 55, 93.1 55.2 C 88.8 55.5, 84.4 55.6, 80 55.9 C 75.7 56.2, 71.3 56.6, 67 57.2 C 62.7 57.9, 58.5 59, 54.2 59.8 C 49.9 60.7, 45.7 61.5, 41.4 62.3 C 37.1 63.2, 32.9 64.1, 28.6 64.9 C 24.3 65.8, 20.1 66.6, 15.8 67.4 C 11.5 68.3, 3.7 67.9, 3 70 C 2.3 72.1, 8.8 76.6, 11.6 79.9 C 14.5 83.2, 17.3 86.4, 20.1 89.7 C 23 93, 25.8 96.3, 28.7 99.6 C 31.6 102.9, 34.4 106.1, 37.3 109.4 C 40.2 112.7, 42.9 116, 45.8 119.3 C 48.7 122.6, 51.5 125.9, 54.4 129.2 C 57.3 132.5, 60.1 135.9, 63 139 C 66 142.1, 68.4 146.2, 72.1 147.7 C 75.8 149.2, 80.8 148, 85.1 148.1 C 89.4 148.2, 93.8 148.4, 98.2 148.5 C 102.6 148.6, 107 148.8, 111.3 148.9 C 115.7 149, 120 149.2, 124.3 149.3 C 128.7 149.4, 133.1 149.2, 137.4 149.7 C 141.7 150.2, 145.9 151.4, 150.1 152.5 C 154.3 153.6, 158.4 155.1, 162.6 156.2 C 166.8 157.3, 171.1 158, 175.4 158.9 C 179.7 159.8, 184 160.7, 188.2 161.6 C 192.5 162.5, 196.7 163.6, 200.9 164.5 C 205.2 165.5, 209.5 166.4, 213.7 167.3 C 218 168.2, 222.1 169.2, 226.4 170 C 230.7 170.8, 235 171.5, 239.3 171.9 C 243.6 172.4, 248.1 172.5, 252.4 172.7 C 256.8 172.9, 261 173, 265.4 173.2 C 269.8 173.4, 274.2 173.8, 278.5 174 C 282.9 174.3, 287.2 174.4, 291.5 174.7 C 295.8 175, 300.2 175.5, 304.5 175.8 C 308.9 176.1, 313.3 176.4, 317.6 176.6 C 322 176.8, 326.3 176.8, 330.6 177.2 C 334.9 177.6, 339.3 178.3, 343.6 178.8 C 347.9 179.3, 352.3 179.9, 356.6 180.3 C 360.9 180.7, 365.3 180.8, 369.6 181 C 373.9 181.2, 378.3 181.3, 382.6 181.5 C 387 181.7, 391.4 181.9, 395.7 182.1 C 400 182.3, 404.3 182.5, 408.7 182.7 C 413.1 183, 417.5 183.2, 421.8 183.6 C 426.1 184, 430.4 184.6, 434.7 185.1 C 439 185.6, 443.4 186.3, 447.7 186.8 C 452 187.4, 456.4 188, 460.7 188.4 C 465 188.9, 469.4 189.3, 473.7 189.5 C 478 189.7, 482.4 189.8, 486.7 189.8 C 491.1 189.8, 495.5 189.5, 499.8 189.7 C 504.2 189.9, 508.5 190.1, 512.8 190.7 C 517.1 191.3, 521.4 192.3, 525.6 193.3 C 529.9 194.3, 534.1 195.6, 538.3 196.6 C 542.5 197.6, 546.7 198.5, 551 199.3 C 555.3 200.1, 559.6 200.8, 563.9 201.6 C 568.2 202.4, 572.5 203.2, 576.8 203.9 C 581.1 204.7, 585.3 205.4, 589.6 206.1 C 593.9 206.9, 598.2 207.7, 602.5 208.4 C 606.8 209.1, 611.1 209.7, 615.4 210.2 C 619.7 210.7, 624.1 211.1, 628.4 211.5 C 632.7 211.9, 637.1 212.3, 641.4 212.7 C 645.7 213.1, 650.1 213.5, 654.4 214.1 C 658.7 214.7, 663 215.5, 667.3 216.3 C 671.6 217.2, 675.8 218.2, 680 219.2 C 684.2 220.2, 688.5 221.2, 692.7 222.2 C 696.9 223.2, 701.2 224.4, 705.4 225.4 C 709.6 226.5, 713.9 227.5, 718.1 228.5 C 722.3 229.6, 726.6 230.6, 730.8 231.7 C 735 232.8, 739.2 233.9, 743.4 235 C 747.6 236.1, 751.8 237.4, 756 238.5 C 760.2 239.6, 764.4 240.7, 768.7 241.5 C 773 242.3, 777.3 242.8, 781.6 243.4 C 785.9 244.1, 790.2 244.7, 794.5 245.4 C 798.8 246.1, 803.1 246.9, 807.4 247.7 C 811.7 248.5, 816 249.2, 820.2 250.1 C 824.5 251, 828.7 252.2, 832.9 253.2 C 837.1 254.3, 841.3 255.5, 845.5 256.4 C 849.8 257.3, 854.1 258, 858.4 258.7 C 862.7 259.4, 867.1 259.8, 871.4 260.3 C 875.7 260.8, 880 261.3, 884.3 261.9 C 888.6 262.5, 893 263.1, 897.3 263.7 C 901.6 264.3, 905.9 264.9, 910.2 265.5 C 914.5 266.1, 918.9 266.7, 923.2 267.2 C 927.5 267.7, 931.8 268.2, 936.1 268.7 C 940.4 269.2, 944.8 269.8, 949.1 270.4 C 953.4 271, 957.7 272.1, 962 272.4 C 966.3 272.7, 970.7 272.4, 975 272.4 C 979.4 272.4, 983.7 272.3, 988.1 272.4 C 992.5 272.5, 996.9 272.6, 1001.2 272.7 C 1005.6 272.8, 1009.9 273.6, 1014.2 273.1 C 1018.5 272.6, 1022.6 271.1, 1026.8 269.9 C 1031 268.7, 1035.6 267.8, 1039.2 266 C 1042.9 264.2, 1046.5 262.1, 1048.7 258.9 C 1051 255.7, 1052.9 250.7, 1052.7 246.7 C 1052.5 242.7, 1049.6 238.5, 1047.5 234.7 C 1045.4 230.9, 1042.7 227.4, 1040.3 223.8 C 1037.9 220.2, 1035.4 216.6, 1032.9 213 C 1030.4 209.4, 1028 205.9, 1025.5 202.3 C 1023 198.7, 1021.3 193.5, 1018.1 191.5 C 1014.9 189.5, 1010.4 190.3, 1006.3 190.3 C 1002.2 190.3, 997.6 191.2, 993.3 191.7 C 989 192.2, 984.6 193.5, 980.3 193.2 C 976.1 192.9, 971.9 191.3, 967.8 189.8 C 963.7 188.3, 959.8 186.3, 955.9 184.4 C 952 182.5, 948.2 180.4, 944.4 178.2 C 940.6 176, 937 173.7, 933.3 171.4 C 929.6 169.1, 926 166.6, 922.2 164.4 C 918.4 162.2, 914.6 160, 910.7 158.2 C 906.8 156.4, 902.7 154.9, 898.6 153.3 C 894.5 151.8, 890.4 150.4, 886.3 148.9 C 882.2 147.4, 878.1 146, 874 144.5 C 869.9 143.1, 865.8 141.6, 861.7 140.2 C 857.6 138.8, 853.5 137.5, 849.3 136.2 C 845.1 134.9, 840.9 133.8, 836.7 132.6 C 832.5 131.5, 828.3 130.4, 824.1 129.3 C 819.9 128.2, 815.7 127.1, 811.4 126.1 C 807.2 125.1, 802.9 124.2, 798.6 123.3 C 794.3 122.4, 790.1 121.6, 785.8 120.8 C 781.5 120, 777.3 119.1, 773 118.3 C 768.7 117.5, 764.4 116.8, 760.1 116.1 C 755.8 115.4, 751.6 114.6, 747.3 113.9 C 743 113.2, 738.6 112.5, 734.3 111.9 C 730 111.3, 725.7 110.8, 721.4 110.2 C 717.1 109.7, 712.7 109.2, 708.4 108.6 C 704.1 108, 699.8 107.4, 695.5 106.8 C 691.2 106.2, 686.9 105.5, 682.6 104.9 C 678.3 104.3, 673.9 103.7, 669.6 103.2 C 665.3 102.7, 660.9 102.3, 656.6 101.8 C 652.3 101.4, 647.9 100.9, 643.6 100.5 C 639.3 100.1, 634.9 99.8, 630.6 99.5 C 626.3 99.2, 622 98.8, 617.6 98.6 C 613.3 98.4, 608.9 98.3, 604.5 98.1 C 600.2 97.9, 595.9 97.6, 591.5 97.4 C 587.2 97.2, 582.8 97, 578.4 96.8 C 574.1 96.6, 567.6 96.2, 565.4 96.1"/>
+                </g>
+              </mask>
+              <filter id="brushFeather" x="-25%" y="-25%" width="150%" height="150%">
+                <feGaussianBlur stdDeviation="2"/>
+              </filter>
+            </defs>
+            <path d="M370.708 130.988C354.239 132.315 324.243 125.116 307.816 121.215C307.519 121.146 307.206 121.075 306.902 121.004C302.977 120.073 299.245 119.349 294.922 118.517C290.427 117.653 285.324 116.673 278.668 115.224C270.049 113.354 258.805 110.661 243.25 106.985C235.162 105.999 227.248 105.14 219.48 104.453C201.277 102.786 184.463 102.571 164.079 102.785C141.628 102.84 121.594 105.533 96.0924 110.666C89.9933 111.549 84.4037 114.021 87.3603 112.073C88.7442 111.186 93.0108 106.517 94.1794 103.252C95.4108 100.02 94.4753 101.278 93.3387 105.975C96.3249 92.2242 91.3251 82.1754 89.3542 79.013C87.0684 75.3986 86.1289 74.9316 85.9278 74.786C85.5845 74.7569 87.6147 76.7045 90.0354 78.5383C95.0702 82.4084 102.172 86.9363 109.55 91.4573C117.379 96.3505 125.721 100.675 134.773 104.611C135.725 104.943 136.706 105.279 137.698 105.611C156.702 112.105 184.057 117.958 201.509 123.564C210.135 126.34 217.826 128.849 224.675 131.156C232.955 134.196 240.472 136.25 247.613 138.045C259.555 139.998 272.394 141.56 285.318 143.067C322.957 147.373 361.533 150.584 400.281 153.9C423.539 155.864 447.352 158.34 470.145 160.851C474.135 161.276 478.079 161.684 482.006 162.061C502.121 163.981 522.028 166.551 541.863 169.618C548.209 170.601 554.556 171.643 560.88 172.743C575.826 175.319 591.243 177.848 606.534 180.448C619.169 181.798 631.258 182.946 642.45 184.063C649.568 184.773 656.346 185.476 662.682 186.208C670.387 187.103 677.431 188.054 683.684 189.118C711.224 193.82 741.38 201.99 763.69 207.706C767.339 208.645 770.778 209.523 773.961 210.318C785.416 212.227 796.846 214.029 808.249 215.686C814.762 216.633 821.223 217.52 827.706 218.353C828.842 218.898 829.944 219.451 831.114 220.023C845.498 227.076 864.078 229.933 893.554 232.554C895.23 232.702 896.959 232.851 898.711 232.998C910.491 233.982 923.733 234.999 938.817 235.913C949.973 236.567 955.528 238.439 960.165 239.963C961.543 240.408 962.769 240.817 964.084 241.138C968.494 242.236 973.079 240.846 978.197 239.021C983.646 237.074 989.304 234.727 996.444 233.814C996.336 233.971 995.536 234.292 993.876 235.703C991.889 237.277 989.241 240.919 988.667 243.564C987.99 246.235 988.478 247.33 988.713 247.389C989.306 247.431 989.194 244.768 988.52 242.363C989.324 243.581 988.713 242.132 987.067 240.896C985.455 239.584 983.172 238.251 980.853 237.17C976.144 234.966 971.293 233.607 966.779 232.236C963.079 231.111 959.521 229.969 955.87 228.169C953.57 227.032 951.063 225.57 948.329 223.664C940.105 218.024 931.889 210.578 925.377 204.546C919.591 199.01 905.275 192.83 892.204 188.753C891.286 188.509 890.292 188.251 889.273 187.998C884.801 186.9 878.451 184.33 870.636 181.426C862.57 178.424 852.934 175.044 842.263 172.46C829.897 169.47 820.118 167.266 812.118 165.512C802.924 163.52 796.203 162.298 790.027 161.205C786.8 160.638 783.758 160.121 780.701 159.626C774.617 158.643 767.535 157.433 760.015 156.173C755.68 155.45 751.223 154.722 746.746 154.024C732.168 151.74 717.332 149.808 705.968 148.978C687.156 145.065 668.141 141.535 649.416 138.718L650.37 138.804C639.949 137.516 629.543 136.271 619.137 135.089C603.701 133.328 589.163 128.432 578.714 121.317C577.378 120.396 576.082 119.447 574.92 118.477L575.18 118.484C567.479 112.022 562.887 104.646 562.525 96.7432C562.223 88.8921 566.875 80.9445 576.169 74.8964C576.207 74.8994 576.323 74.8984 576.362 74.9018C577.689 74.0136 579.153 73.1652 580.654 72.3568C592.382 66.1179 607.984 62.9322 623.96 63.2837C634.73 63.5253 645.462 63.8293 656.214 64.1995C656.374 64.2208 656.859 64.2469 657.018 64.2721C679.11 65.6071 700.816 67.8048 722.519 70.7499C740.83 73.2442 759.047 76.2902 777.192 79.9618C795.806 83.7394 814.918 88.0577 834.06 93.9068C836.324 94.5937 838.607 95.2972 840.868 96.0047C867.871 104.702 892.428 112.422 922.142 126.259C922.196 126.286 922.251 126.313 922.305 126.34C924.884 127.627 927.45 128.929 930.032 130.259C952.58 138.551 977.332 152.101 990.984 161.557C991.728 162.056 992.451 162.55 993.166 163.05C998.961 166.865 1007.25 172.861 1014.35 178.746C1019.76 183.213 1025.11 187.693 1031.75 193.842C1035.25 197.299 1040.78 202.016 1046.88 213.151C1048.11 215.488 1049.31 218.111 1050.36 221.053C1052.57 228.07 1056.61 235.997 1055.28 254.438C1054.51 263.436 1049.92 277.536 1039.5 287.491C1029.22 297.475 1018.06 301.015 1010.11 302.65C993.239 306.115 976.197 306.567 961.304 305.622C947.391 304.737 932.01 302.222 917.599 299.48C909.008 297.848 900.787 296.148 893.368 294.697C883.044 292.678 874.208 291.113 868.515 290.911C851.313 290.328 832.036 286.454 815.265 282.659C808.705 281.181 802.491 279.724 796.895 278.519C788.872 276.79 782.093 275.585 777.254 275.562C767.447 275.511 759.526 273.192 747.839 269.692C739.732 267.262 729.817 264.256 716.233 261C700.554 257.239 689.733 253.641 680.541 250.616C670.236 247.224 661.964 244.525 651.351 243.139C648.617 242.781 645.75 242.511 642.668 242.339C625.722 241.376 608.194 239.602 594.712 236.42C588.589 234.972 581.447 233.781 574.03 232.566C566.473 231.324 558.618 230.062 551.007 228.366C548.837 227.876 546.698 227.362 544.615 226.814C537.175 224.861 531.169 222.163 525.813 219.813C524.137 219.08 522.527 218.384 520.97 217.757C514.88 216.936 508.778 216.192 502.676 215.54C501.658 215.707 500.587 215.901 499.466 216.101C493.859 217.111 487.004 218.4 478.718 218.702C478.272 218.719 477.827 218.732 477.384 218.744C463.967 218.998 452.694 216.926 440.905 214.938C431.397 213.328 421.53 211.74 410.045 211.315C405.962 211.164 401.57 211.147 397.035 211.204C392.875 211.256 388.578 211.364 384.291 211.476C370.981 211.824 357.786 212.188 348.676 211.043C345.265 210.615 342.375 209.356 339.516 208.103C339.503 208.095 339.491 208.088 339.478 208.081C339.284 207.996 339.089 207.912 338.896 207.828C319.621 207.515 300.326 207.246 280.757 206.69C277.648 206.599 274.558 206.506 271.463 206.406C269.466 206.539 267.469 206.665 265.494 206.784C255.764 207.366 246.142 207.776 239.487 208.877C234.074 209.77 222.119 209.563 207.311 207.177C203.49 206.609 199.544 206.007 195.498 205.386C184.358 203.681 172.631 201.85 162.793 200.605C157.04 199.879 151.941 197.427 146.678 194.822C141.763 192.389 136.707 189.831 130.714 188.336C127.702 187.583 124.351 187.044 120.737 186.403C117.554 185.837 114.172 185.194 110.66 184.252C107.411 183.372 100.52 180.255 91.8009 175.619C86.4165 172.755 80.3493 169.299 74.0851 165.476C72.6622 164.79 71.2446 164.09 69.8273 163.373C62.7323 159.813 55.4645 156.089 47.6524 151.488C39.6513 146.345 31.968 143.052 19.7116 129.067C13.8185 123.193 4.29064 110.593 4.41132 92.1171C4.419 89.986 4.55288 87.8718 4.7996 85.8048C4.06015 84.3329 3.19916 82.7593 2.41632 80.8497C1.18077 77.6696 -0.138893 73.8121 0.856947 66.3833C1.57632 60.6081 5.20844 52.462 9.16973 47.9213C10.9822 45.7795 12.6695 44.4168 14.2108 43.2376C15.9691 41.9054 17.5732 40.7843 19.1414 39.1849C20.3033 38.0048 21.2262 36.6516 22.4748 34.9998C24.3861 32.4436 27.1303 29.1154 31.6417 26.1713C48.6736 15.4955 61.7005 12.9877 73.1202 10.4499C73.2848 10.4166 73.4495 10.3834 73.6144 10.3503C82.9191 8.55199 93.1788 6.59673 101.476 4.8259C110.879 2.77481 125.156 1.8561 139.305 1.98205C147.125 2.0296 154.867 2.34938 161.889 2.6369C163.526 2.71755 165.106 2.78187 166.67 2.82552C173.926 3.02955 181.826 2.20638 189.739 1.59009C199.232 0.839368 208.671 0.422684 216.446 2.04442C218.008 2.37144 219.91 3.87983 222.195 5.7814C223.836 7.13083 225.689 8.68074 227.82 10.1601C237.532 11.0196 247.055 12.1903 256.457 13.567C256.808 13.426 257.17 13.2836 257.535 13.1376C257.541 13.1339 257.547 13.1302 257.553 13.1265C265.82 9.838 277.339 5.47604 291.276 11.4783C293.35 12.3818 294.932 13.4837 296.264 14.62C297.098 15.3777 297.832 16.1529 298.541 16.8962C300.285 18.7075 301.815 20.3235 304.353 21.0545C307.294 21.8941 310.883 21.6048 314.823 21.2994C320.434 20.8845 326.536 20.3962 332.269 22.8932C332.653 23.0623 333.066 23.2465 333.498 23.4342C337.617 25.218 343.739 27.8647 349.508 32.0178C368.149 36.2125 386.742 40.5678 405.313 45.0215C436.265 52.4451 467.129 60.1401 498.021 67.8499C499.41 68.1961 500.757 68.5611 502.058 68.944C515.536 72.8612 527.715 79.1709 536.37 86.9382C545.893 95.4911 550.385 105.057 548.734 113.792C547.131 122.529 539.561 129.863 527.612 134.458C516.759 138.63 503.133 140.186 489.144 139.043C487.792 138.937 486.404 138.798 484.983 138.626C459.95 135.616 434.862 132.605 409.873 129.507C408.539 129.45 407.199 129.386 405.878 129.315C396.005 128.774 386.601 129.598 377.198 130.43C375.037 130.621 372.873 130.813 370.708 130.988Z" fill="url(#brushPigment)" fill-opacity="0.92" mask="url(#brushReveal)" filter="url(#brushGrain)"/>
+          </svg>
+          </div>
+          <img class="logo-title" src="Logo+Title.svg"/>
+        </div>
+
+        <div class="slide-to-start-container">
+          <div class="slide-track">
+            <div class="slide-fill" id="slideFill"></div>
+            <div class="slide-label" id="slideLabel">Slide to start</div>
+            <div class="slide-button" id="slideButton">
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Printer Config Button - Bottom Right -->
+      <button id="printerConfigBtn" class="printer-config-btn splash-config-btn" aria-label="Printer configuration">
+        <svg class="config-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 6h9"/><path d="M16 6h5"/><circle cx="14" cy="6" r="2"/>
+          <path d="M3 12h5"/><path d="M12 12h9"/><circle cx="10" cy="12" r="2"/>
+          <path d="M3 18h9"/><path d="M16 18h5"/><circle cx="14" cy="18" r="2"/>
+        </svg>
+        <span>Printer Config</span>
+      </button>
+    </div>
+
+    <!-- ===== boot loader (brand glyph "writing" only, no badge/frame) ===== -->
+    <div id="loader" role="status" aria-label="Loading DIRECTED">
+      <svg class="loader-mark" viewBox="15 13 57 111" aria-hidden="true">
+        <path fill-rule="evenodd" clip-rule="evenodd" fill="var(--ink)"
+              d="M22.7295 122.354L22.7295 61.542L40.0527 61.542L40.0527 117.965L46.0098 117.965L46.0098 61.542L64.665 61.542L64.665 122.981L70.6221 122.981L70.6221 63.4814C70.6221 58.601 66.6655 54.6447 61.7852 54.6445L25.6875 54.6445C20.8071 54.6447 16.8506 58.601 16.8506 63.4814L16.8506 122.354L22.7295 122.354ZM16.8506 29.7676C16.8506 34.3661 17.7916 38.1811 19.6728 41.2119C21.5018 44.2427 24.3758 46.49 28.2949 47.9531C32.2141 49.4685 37.3354 50.2256 43.6582 50.2256C49.8765 50.2256 54.9979 49.4685 59.0215 47.9531C62.9927 46.49 65.9186 44.2426 67.7998 41.2119C69.681 38.1811 70.6221 34.3402 70.6221 29.6895L70.6221 14.4053L16.8506 14.4053L16.8506 29.7676ZM64.9785 20.9111L64.9785 28.9844C64.9785 31.2312 64.691 33.2429 64.1162 35.0195C63.4891 36.7962 62.4695 38.3381 61.0586 39.6445C59.5955 40.9507 57.5837 41.9438 55.0234 42.623C52.463 43.3023 49.2495 43.6416 45.3828 43.6416L42.5605 43.6416C38.6414 43.6416 35.4013 43.3024 32.8408 42.623C30.2281 41.9437 28.1638 40.9509 26.6484 39.6445C25.1331 38.3904 24.0626 36.8484 23.4355 35.0195C22.8085 33.2429 22.4942 31.2313 22.4941 28.9844L22.4941 20.9111L64.9785 20.9111Z"/>
+      </svg>
+      <div class="loader-bar"></div>
+    </div>
+
+    <!-- Main Application Content (initially hidden) -->
+    <!-- Demo Mode Indicator -->
+    <div id="demoIndicator" class="demo-indicator">
+      <div class="demo-indicator-text">DEMO MODE</div>
+    </div>
+    
+    <!-- Setting Popup Sliders -->
+    <div id="flowRatePopup" class="setting-popup">
+      <div class="setting-popup-content">
+        <input type="range" class="popup-slider" min="1" max="200" step="1" value="100" id="flowSliderPopup">
+        <div class="setting-popup-value" id="flowRateValue">100%</div>
+      </div>
+    </div>
+    
+    <div id="printSpeedPopup" class="setting-popup">
+      <div class="setting-popup-content">
+        <input type="range" class="popup-slider" min="1" max="50" step="1" value="25" id="speedSliderPopup">
+        <div class="setting-popup-value" id="printSpeedValue">25 mm/s</div>
+      </div>
+    </div>
+    
+    <div id="interpPopup" class="setting-popup">
+      <div class="setting-popup-content">
+        <input type="range" class="popup-slider" min="0" max="1" step="0.01" value="0.8" id="interpSliderPopup">
+        <div class="setting-popup-value" id="interpValue">0.80</div>
+      </div>
+    </div>
+    
+    <!-- Dropdown Menu -->
+    <div id="dropdownMenu" class="dropdown-menu">
+      <div class="dropdown-menu-content">
+        <div class="dropdown-container">
+          <div class="dropdown-label">3D Color Scheme</div>
+          <div class="color-scheme-buttons">
+            <button class="color-scheme-btn" data-scheme="TECHNICAL">Technical</button>
+            <button class="color-scheme-btn" data-scheme="TERRACOTTA">Terracotta</button>
+            <button class="color-scheme-btn" data-scheme="PORCELAIN">Porcelain</button>
+            <button class="color-scheme-btn" data-scheme="BROWN">Brown</button>
+            <button class="color-scheme-btn" data-scheme="GREY">Grey</button>
+          </div>
+        </div>
+        <div class="dropdown-container">
+          <div class="dropdown-label">Actions</div>
+          <button id="exportGcodeDropdownBtn" class="export-gcode-dropdown-btn">Export G-Code</button>
+          <button id="studioModeBtn" class="studio-mode-btn">Split Screen Mode</button>
+          <button id="userPreferencesBtn" class="user-preferences-btn">User Preferences…</button>
+          <button id="printerConfigDropdownBtn" class="user-preferences-btn">Printer Config…</button>
+        </div>
+      </div>
+    </div>
+    
+    <div id="mainContent">
+      <div id="leftContainer">
+    <div id="topBar">
+      <div id="topBarLeft">
+        <span id="pillDemoChip" class="pill-demo-chip">DEMO</span>
+      </div>
+      <div id="topBarCenter">
+        <!-- Unified transport: idle → Start Print, printing → Pause, paused → Continue.
+             Starts showing a play icon. -->
+        <button id="pauseButton" class="control-button pause-button" title="Start Print">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
+            <polygon points="8,4 20,12 8,20" fill="currentColor"/>
+          </svg>
+        </button>
+        <button id="stopButton" class="control-button stop-button">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
+            <rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>
+          </svg>
+        </button>
+      </div>
+      <div id="topBarSettings">
+        <button id="flowRateBtn" class="setting-button">
+          <span class="setting-text">Flow Rate</span>
+          <svg class="dropdown-arrow" viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7.5 2.5L4 5L7.5 7.5" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button id="printSpeedBtn" class="setting-button">
+          <span class="setting-text">Print Speed</span>
+          <svg class="dropdown-arrow" viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7.5 2.5L4 5L7.5 7.5" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button id="interpBtn" class="setting-button">
+          <span class="setting-text">Blend Smoothness</span>
+          <svg class="dropdown-arrow" viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7.5 2.5L4 5L7.5 7.5" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      <div id="topBarRight">
+        <button id="menuButton" class="hamburger-menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </div>
+        <div id="PathEditorBox">
+          <canvas id="PathEditorView"></canvas>
+          <div id="PathEditorOverlay"></div>
+          <img class="pane-logo" src="Logo small.svg" alt="DIRECTƎD" aria-hidden="true" />
+        </div>
+        <div id="ActionBar" role="toolbar" aria-label="Curve editing tools" aria-orientation="horizontal">
+          <div class="action-section">
+            <button id="ResetCurve" aria-label="Reset curve" data-tip="Reset">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                <path d="M21 3v5h-5"/>
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                <path d="M3 21v-5h5"/>
+              </svg>
+            </button>
+          </div>
+          <div class="action-separator"></div>
+          <div class="action-section">
+            <button id="Copy" aria-label="Copy curve" data-tip="Copy">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+              </svg>
+            </button>
+            <button id="Paste" aria-label="Paste curve" data-tip="Paste">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+              </svg>
+            </button>
+          </div>
+          <div class="action-separator"></div>
+          <div class="action-section" role="group" aria-label="Transform tool">
+            <button id="MoveCurve" title="Move Curve" aria-label="Move curve" aria-pressed="false" data-tip="Move">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20M12 2v20M5 9l-3 3 3 3m14-6 3 3-3 3M9 5l3-3 3 3m-6 14 3 3 3-3"/></svg>
+            </button>
+            <button id="RotateCurve" title="Rotate Curve" aria-label="Rotate curve" aria-pressed="false" data-tip="Rotate">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8M21 3v5h-5"/></svg>
+            </button>
+            <button id="ScaleCurve" title="Scale Curve" aria-label="Scale curve" aria-pressed="false" data-tip="Scale">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9V3h6M3 3l7 7M21 15v6h-6M21 21l-7-7"/></svg>
+          </button>
+        </div>
+      </div><!-- /#ActionBar -->
+      </div><!-- /#leftContainer -->
+      <div id="rightContainer">
+        <div id="SimulationBox">
+          <canvas id="SimulationView"></canvas>
+          <div id="SimulationPerspectiveCube"></div>
+
+        </div>
+        <div id="PrinterLog"></div>
+      </div><!-- /#rightContainer -->
+      <div id="seam" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize 2D and 3D panels"></div>
+
+      <div id="SliderContainer">
+          <div id="viewControlsDock" class="view-controls-dock" role="group" aria-label="3D view controls">
+          <button id="planeToggleButton" title="Toggle 3D plane" aria-label="Toggle 3D plane" aria-pressed="false">
+            <span class="plane-icon"></span>
+            <div class="toggle-rail"></div>
+          </button>
+          <button id="homingButton" title="Reset view to home" aria-label="Reset view to home">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M3 10.5 12 3l9 7.5V21h-6v-7H9v7H3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button id="lockButton" title="Lock view rotation" aria-label="Lock view rotation">
+            <svg class="lock-ico" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path class="lock-shackle" d="M8 11V7a4 4 0 0 1 8 0v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <rect class="lock-body" x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </button>
+          <button id="heatmapToggleButton" title="Hide structural heatmap" aria-label="Toggle structural soundness heatmap" aria-pressed="true">
+            <svg class="heatmap-ico" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <rect x="3" y="4" width="18" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>
+              <rect x="6" y="7" width="3.5" height="10" rx="1" fill="currentColor" opacity="0.3"/>
+              <rect x="10.25" y="7" width="3.5" height="10" rx="1" fill="currentColor" opacity="0.62"/>
+              <rect x="14.5" y="7" width="3.5" height="10" rx="1" fill="currentColor"/>
+            </svg>
+          </button>
+          </div><!-- /#viewControlsDock -->
+        <div class="layer-step-controls" role="group" aria-label="Layer controls">
+          <span class="layer-step-label">Layer</span>
+          <button id="layerStepUp" type="button" aria-label="Next layer" title="Next layer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+          <button id="layerStepDown" type="button" aria-label="Previous layer" title="Previous layer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+        </div>
+        <div id="parameters"></div>
+        <!-- Custom layer slider (upgraded by layer-slider.js into a role=slider component) -->
+        <div id="LayerSlider" class="ls"></div>
+      </div>
+    </div> <!-- Close mainContent -->
+
+    <!-- Completion Screen Overlay -->
+    <div id="completionOverlay" class="completion-overlay">
+        <div class="completion-modal">
+            <h2>Session Complete</h2>
+            <p>Please wait until object dries enough for removal</p>
+            <!-- <div class="timer-display" id="completionTimer">05:00</div> -->
+            <div class="completion-buttons">
+                <button id="exportGcodeCompletionBtn" class="completion-button export">Export G-Code</button>
+                <button id="newSessionBtn" class="completion-button new-session" disabled>Start New Session</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stop Confirmation Overlay -->
+    <div id="stopConfirmationOverlay" class="stop-confirmation-overlay">
+        <div class="stop-confirmation-modal">
+            <h3>Stop Print Session</h3>
+            <p>Are you sure you want to stop this session?</p>
+            <div class="stop-confirmation-buttons">
+                <button id="stopYesBtn" class="stop-confirmation-button yes">Yes</button>
+                <button id="stopNoBtn" class="stop-confirmation-button no">No</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Printer Configuration Modal -->
+    <div id="printerConfigModal" class="printer-config-modal">
+        <div class="printer-config-content" role="dialog" aria-modal="true" aria-labelledby="printerConfigTitle">
+            <header class="config-header">
+                <h2 id="printerConfigTitle">Printer Config</h2>
+                <button type="button" class="config-close" id="closeConfigBtn" aria-label="Close">✕</button>
+            </header>
+            <div class="printer-config-form">
+                <div class="config-field">
+                    <label for="printerType">Printer Type:</label>
+                    <input type="text" id="printerType" value="Ender 3 V2 Neo" disabled>
+                </div>
+                <div class="config-field">
+                    <label for="maxBuildHeight">Max Build Height (mm):</label>
+                    <input type="number" id="maxBuildHeight" min="1" max="1000" step="1" value="180">
+                </div>
+                <div class="config-field">
+                    <label for="layerHeight">Layer Height (mm):</label>
+                    <input type="number" id="layerHeight" min="0.1" max="1.0" step="0.1" value="0.2">
+                </div>
+                <div class="config-field">
+                    <label for="nozzleDiameter">Nozzle Diameter (mm):</label>
+                    <input type="number" id="nozzleDiameter" min="0.1" max="2.0" step="0.1" value="0.4">
+                </div>
+                <div class="config-validation-message" id="validationMessage"></div>
+                <div class="config-buttons">
+                    <button id="saveConfigBtn" class="config-button save">Save</button>
+                    <button id="cancelConfigBtn" class="config-button cancel">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Destructive Printer-Config Change Warning Modal -->
+    <div id="configChangeWarningOverlay" class="config-change-overlay" role="dialog" aria-modal="true" aria-labelledby="configChangeWarningTitle" aria-describedby="configChangeWarningDesc">
+        <div class="config-change-modal">
+            <h3 id="configChangeWarningTitle">Change Printer Configuration?</h3>
+            <p id="configChangeWarningDesc">Changing printer configuration will stop the printer and reset the current session.</p>
+            <div class="config-change-buttons">
+                <button id="configChangeExportBtn" class="config-change-button export">Export G-Code</button>
+                <button id="configChangeCancelBtn" class="config-change-button cancel">Cancel</button>
+                <button id="configChangeAcceptBtn" class="config-change-button accept">Accept</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stop-Session-On-Save Modal (mid-session config save) -->
+    <div id="stopSessionOverlay" class="config-change-overlay" role="dialog" aria-modal="true" aria-labelledby="stopSessionTitle" aria-describedby="stopSessionDesc">
+        <div class="config-change-modal">
+            <h3 id="stopSessionTitle">Session Stopped</h3>
+            <p id="stopSessionDesc">The printer has stopped and the session was reset with the updated configuration.</p>
+            <div class="config-change-buttons">
+                <button id="stopSessionExportBtn" class="config-change-button export">Export G-Code</button>
+                <button id="stopSessionNewBtn" class="config-change-button accept">Start New Session</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notifications -->
+    <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+    <!-- User Preferences Modal -->
+    <div id="userPreferencesModal" class="user-preferences-modal">
+        <div class="user-preferences-content">
+            <h2>User Preferences</h2>
+            <div class="user-preferences-form">
+                <div class="preference-section">
+                    <h3>Text Size</h3>
+                    <div class="text-size-controls">
+                        <button id="textSizeSmall" class="text-size-btn" data-size="small">Small</button>
+                        <button id="textSizeMedium" class="text-size-btn selected" data-size="medium">Medium</button>
+                        <button id="textSizeLarge" class="text-size-btn" data-size="large">Large</button>
+                    </div>
+                </div>
+                
+                <div class="preference-section">
+                    <h3>Display Options</h3>
+                    <div class="preference-item">
+                        <label for="darkModeToggle">Dark Mode</label>
+                        <button id="darkModeToggle" class="preference-toggle-btn" role="switch" aria-label="Dark Mode" aria-checked="false">Off</button>
+                    </div>
+                    <div class="preference-item">
+                        <label for="printerLogToggle">Show Printer Log</label>
+                        <button id="printerLogToggle" class="preference-toggle-btn active">Hide Printer Log</button>
+                    </div>
+                </div>
+                
+                <div class="preference-section">
+                    <h3>Default Color Scheme</h3>
+                    <div class="preference-item">
+                        <label for="defaultColorScheme">Color Scheme</label>
+                        <select id="defaultColorScheme" class="preference-dropdown">
+                            <option value="TECHNICAL">Technical</option>
+                            <option value="TERRACOTTA">Terracotta</option>
+                            <option value="PORCELAIN">Porcelain</option>
+                            <option value="BROWN">Brown</option>
+                            <option value="GREY">Grey</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="preference-buttons">
+                    <button id="savePreferencesBtn" class="preference-button save">Save Preferences</button>
+                    <button id="cancelPreferencesBtn" class="preference-button cancel">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dark Mode Coming Soon Modal -->
+    <div id="darkModeModal" class="dark-mode-modal">
+        <div class="dark-mode-content">
+            <h2>Dark Mode</h2>
+            <p>Dark mode is coming soon! This feature is currently under development and will be available in a future update.</p>
+            <p>Stay tuned for this exciting enhancement to your printing experience.</p>
+            <div class="dark-mode-buttons">
+                <button id="darkModeOkBtn" class="dark-mode-ok-btn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thanks Modal -->
+    <div id="thanksModal" class="thanks-modal">
+        <div class="thanks-content">
+            <h2 id="thanksTitle">Thank you for using DIRECTƎD!</h2>
+            <div id="thanksText" class="thanks-text">
+                <p>Loading...</p>
+            </div>
+            <div class="thanks-buttons">
+                <button id="thanksOkBtn" class="thanks-ok-btn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debug controls for development (hidden in production) -->
+    <div id="debugControls" style="position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; z-index: 9999; display: none;">
+      <h4 style="margin: 0 0 10px 0;">Debug Controls</h4>    <button id="testLayerUpdate" style="padding: 5px 10px; margin: 2px;">Test Layer Update</button>
+    <button id="checkConnection" style="padding: 5px 10px; margin: 2px;">Check Connection</button>
+    <button id="showLayerInfo" style="padding: 5px 10px; margin: 2px;">Show Layer Info</button>
+    <button id="initLayers" style="padding: 5px 10px; margin: 2px;">Init Layers</button>
+    <button id="testCompletion" style="padding: 5px 10px; margin: 2px;">Test Completion</button>
+    <button id="showConsole" style="padding: 5px 10px; margin: 2px;">Show Console</button>
+      <div id="debugOutput" style="font-size: 11px; max-height: 100px; overflow-y: auto; margin-top: 5px;"></div>
+    </div>
+
+    <!-- On-screen console for iPad -->
+    <div id="onScreenConsole" style="position: fixed; bottom: 10px; left: 10px; width: 400px; height: 200px; background: rgba(0,0,0,0.9); color: #00ff00; font-family: monospace; font-size: 12px; padding: 10px; border-radius: 5px; z-index: 10000; display: none; overflow-y: auto;">
+      <div style="background: rgba(255,255,255,0.1); padding: 5px; margin-bottom: 5px; border-radius: 3px; cursor: pointer;" onclick="document.getElementById('onScreenConsole').style.display='none'">Console (tap to close)</div>
+      <div id="consoleOutput"></div>
+    </div>
+
+    <!-- Inactivity Overlay -->
+    <div id="inactivityOverlay" class="inactivity-overlay">
+      <div class="inactivity-content">
+        <h2>Touch anywhere to continue</h2>
+        <h2>or</h2>
+        <button id="startNewSessionInactivity" class="inactivity-new-session-btn">Start New Session</button>
+      </div>
+    </div>
+
+  </div>
+  <script src="toast.js"></script>
+  <script type="module" src="consts.js"></script>
+  <script src="printer-log.js"></script>
+  <script type="module" src="print-integration.js"></script>
+  <script type="module" src="printer-config.js"></script>
+  <script type="module" src="user-preferences.js"></script>
+  <script src="app.js"></script>
+  <script type="module" src="./init.js"></script>
+  <script src="splash-screen.js"></script>
+  <script src="setting-popups.js"></script>
+  <script src="demo-mode-handler.js"></script>
+  <script src="inactivity-handler.js"></script>
+  <script src="canvas-resize.js"></script>
+  <script src="seam-drag.js"></script>
+  <!-- Toolbars are anchored in their panels; saved floating layouts are no longer applied. -->
+  <script src="appearance-tool.js"></script>
+</body>
+</html>

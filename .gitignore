@@ -1,0 +1,13 @@
+.aider*
+node_modules
+.playwright-mcp/
+.claude/*.lock
+# packaged standalone exe output (npm run build:exe)
+dist/
+
+# Local credentials, runtime logs, and machine-specific permissions
+.env
+.env.*
+!.env.example
+*.log
+.claude/settings.local.json
